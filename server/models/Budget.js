@@ -30,9 +30,9 @@ const budgetSchema = new mongoose.Schema(
     //   required: true,
     // },
 
-    prevMonthSpent: {
-      type: Number,
-      default: 0,
+    prevMonthBudget: {
+     type: mongoose.Schema.Types.ObjectId,
+      default: "Budget",
       required: false,
     },
   },
