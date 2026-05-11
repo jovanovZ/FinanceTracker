@@ -1,5 +1,5 @@
-function App() {
-  return <div>FinanceTracker</div>
-}
+import Landing from "./screens/Landing";
 
-export default App
+export default function App() {
+  return <Landing />;
+}
