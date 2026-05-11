@@ -2,14 +2,14 @@ const mongoose = require("mongoose");
 
 const importHistorySchema = new mongoose.Schema(
   {
-    // User
+    // user
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
 
-    // Id
+    // id
     importBatchId: {
       type: String,
       required: true,
