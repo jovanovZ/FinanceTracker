@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom'
+import ProtectedRoute from './components/ProtectedRoute'
 import Profile from './screens/Profile.jsx'
 import Login from './screens/Login'
 
@@ -169,34 +171,51 @@ function Topbar({ theme, toggleTheme }) {
 
 function App() {
   const [theme, toggleTheme] = useTheme()
-  const [screen, setScreen] = useState('login')
-  const nav = (id) => setScreen(id)
-
-  if (screen === 'login') {
-    return (
-      <>
-        <Login nav={nav} />
-        <button
-          className="theme-toggle"
-          onClick={toggleTheme}
-          aria-label="Toggle theme"
-        >
-          <Ic name={theme === 'dark' ? 'sun' : 'moon'} size={18} />
-        </button>
-      </>
-    )
-  }
 
   return (
-    <div className="app">
-      <Sidebar active="profile" />
-      <div className="main">
-        <Topbar theme={theme} toggleTheme={toggleTheme} />
-        <div className="content">
-          <Profile />
-        </div>
-      </div>
-    </div>
+    <BrowserRouter>
+      <Routes>
+
+        {/* Login */}
+        <Route
+          path="/login"
+          element={
+            <>
+              <Login />
+              <button
+                className="theme-toggle"
+                onClick={toggleTheme}
+                aria-label="Toggle theme"
+              >
+                <Ic name={theme === 'dark' ? 'sun' : 'moon'} size={18} />
+              </button>
+            </>
+          }
+        />
+
+        {/* Protected dashboard */}
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <div className="app">
+                <Sidebar active="profile" />
+                <div className="main">
+                  <Topbar theme={theme} toggleTheme={toggleTheme} />
+                  <div className="content">
+                    <Profile />
+                  </div>
+                </div>
+              </div>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Default redirect */}
+        <Route path="*" element={<Navigate to="/login" replace />} />
+
+      </Routes>
+    </BrowserRouter>
   )
 }
 

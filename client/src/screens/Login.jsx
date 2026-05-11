@@ -1,16 +1,20 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import AuthSide from '../components/AuthSide';
 import { GoogleIcon, AppleIcon, EyeIcon, EyeOffIcon } from '../assets/icons/AuthIcons';
 import '../styles/Auth.css';
 
-const Login = ({ nav }) => {
+const Login = () => {
   const [email, setEmail] = useState('lara@example.com');
   const [password, setPassword] = useState('mypassword123');
   const [showPass, setShowPass] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
+  const navigate = useNavigate();
 
   const handleSubmit = () => {
-    nav('dashboard');
+    // Začasni fake token dokler backend ne bo nared
+    localStorage.setItem('token', 'fake-jwt-token');
+    navigate('/dashboard');
   };
 
   return (
@@ -84,7 +88,7 @@ const Login = ({ nav }) => {
 
             <p className="auth-footer">
               New here?{' '}
-              <a onClick={() => nav('signup')}>Create an account</a>
+              <a href="#">Create an account</a>
             </p>
           </div>
         </div>
