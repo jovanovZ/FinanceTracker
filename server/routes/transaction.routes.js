@@ -6,8 +6,8 @@ import {
     deleteTransaction
 } from '../controllers/transactionController.js';
 
-import { protect } from '../middleware/authMiddleware.js';
-import errorHandler from '../middleware/errorHandler.js'; 
+import protect  from '../middleware/authMiddleware.js';
+import errorMiddleware from '../middleware/errorMiddleware.js'; 
 
 const router = express.Router();
 
@@ -21,6 +21,6 @@ router.route('/:id')
     .patch(updateTransaction)
     .delete(deleteTransaction);
 
-router.use(errorHandler);
+router.use(errorMiddleware);
 
 export default router;

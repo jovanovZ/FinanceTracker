@@ -80,5 +80,6 @@ transactionSchema.index(
   { user: 1, bankTransactionId: 1 }, 
   { unique: true, partialFilterExpression: { bankTransactionId: { $exists: true, $type: 'string' } } }
 );
+let transactionModel = mongoose.model('Transaction', transactionSchema)
 
-module.exports = mongoose.model('Transaction', transactionSchema);
+export default {transactionModel,transactionSchema};
