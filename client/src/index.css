@@ -40,7 +40,7 @@
   --shadow-sm: 0 1px 2px oklch(0.22 0.03 265 / 0.04);
   --shadow: 0 1px 3px oklch(0.22 0.03 265 / 0.06), 0 8px 24px -12px oklch(0.22 0.03 265 / 0.10);
   --shadow-lg: 0 4px 12px oklch(0.22 0.03 265 / 0.08), 0 24px 48px -20px oklch(0.22 0.03 265 / 0.18);
-
+  --sidebar-bg: #1f3463;
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 }
@@ -352,3 +352,36 @@ a { color: inherit; text-decoration: none; }
   z-index: 200;
 }
 .toast.bad { background: var(--bad); }
+
+.theme-toggle {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  z-index: 100;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--text-2);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.theme-toggle:hover { background: var(--surface-2); }
+
+/* remove root constraints */
+body:has(.auth-root) #root {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  border-inline: none;
+}
+
+body:has(.auth-root) {
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+}
