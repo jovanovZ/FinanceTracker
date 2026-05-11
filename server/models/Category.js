@@ -7,7 +7,10 @@ const Schema = mongoose.Schema;
 const categorySchema = new Schema({
   id: Number,
   name: String,
-  transactions: [transactionSchema.transactionSchema]
+  transactions: [transactionSchema.transactionSchema],
+  keywords: [String],
+  companies: [String],
+  isSub: Boolean
 });
 categorySchema.index({ user: 1, month: 1, category: 1 }, { unique: true });
 

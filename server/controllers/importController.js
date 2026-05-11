@@ -1,4 +1,5 @@
-const { parseCSVBuffer } = require('../services/csvParser');
+import parseCSVBuffer from '../services/csvParser.js';
+import categorize from '../services/categorizer.js';
 
 const importCSV = async (req, res) => {
   if (!req.file) {
@@ -6,7 +7,10 @@ const importCSV = async (req, res) => {
   }
 
   try {
-    const { transactions, errors } = await parseCSVBuffer(req.file.buffer);
+    var { transactions, errors } = await parseCSVBuffer(req.file.buffer);
+    console.log(transactions);
+    transactions = await categorize(transactions);
+
 
     return res.status(200).json({
       success: true,
@@ -19,4 +23,4 @@ const importCSV = async (req, res) => {
   }
 };
 
-module.exports = { importCSV };
+export default importCSV;
