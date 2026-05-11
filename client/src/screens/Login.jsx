@@ -21,7 +21,7 @@ const Login = () => {
     <div className="auth-root">
       <div className="auth-wrap">
         <AuthSide />
-        
+
         <div className="auth-form-wrap">
           <div className="auth-form">
             <h1>Welcome back</h1>
@@ -46,29 +46,29 @@ const Login = () => {
               />
             </div>
 
-        <div className="field">
-            <label htmlFor="login-password">Password</label>
+            <div className="field">
+              <label htmlFor="login-password">Password</label>
 
-            <div className="input-affix">
+              <div className="input-affix">
                 <input
-                id="login-password"
-                className="input"
-                type={showPass ? 'text' : 'password'}
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                autoComplete="current-password"
+                  id="login-password"
+                  className="input"
+                  type={showPass ? 'text' : 'password'}
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  autoComplete="current-password"
                 />
 
                 <button
-                className="input-affix-right"
-                onClick={() => setShowPass(v => !v)}
-                aria-label={showPass ? 'Hide password' : 'Show password'}
-                type="button"
+                  className="input-affix-right"
+                  onClick={() => setShowPass(v => !v)}
+                  aria-label={showPass ? 'Hide password' : 'Show password'}
+                  type="button"
                 >
-                {showPass ? <EyeOffIcon /> : <EyeIcon />}
+                  {showPass ? <EyeOffIcon /> : <EyeIcon />}
                 </button>
+              </div>
             </div>
-        </div>
 
             <div className="checkbox-row">
               <label className="checkbox-label">
@@ -79,7 +79,10 @@ const Login = () => {
                 />
                 Remember me for 30 days
               </label>
-              <button className="link-btn">Forgot password?</button>
+              <button type="button" className="link-btn" onClick={() => nav('forgot-password')}
+              >
+                Forgot password?
+              </button>
             </div>
 
             <button className="btn-primary" onClick={handleSubmit}>
