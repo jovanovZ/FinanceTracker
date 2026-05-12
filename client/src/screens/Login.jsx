@@ -1,16 +1,20 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import AuthSide from '../components/AuthSide';
 import { GoogleIcon, AppleIcon, EyeIcon, EyeOffIcon } from '../assets/icons/AuthIcons';
 import '../styles/Auth.css';
 
-const Login = ({ nav }) => {
+const Login = () => {
   const [email, setEmail] = useState('lara@example.com');
   const [password, setPassword] = useState('mypassword123');
   const [showPass, setShowPass] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
+  const navigate = useNavigate();
 
   const handleSubmit = () => {
-    nav('dashboard');
+    // Začasni fake token dokler backend ne bo nared
+    localStorage.setItem('token', 'fake-jwt-token');
+    navigate('/onboarding');
   };
 
   return (
@@ -44,7 +48,6 @@ const Login = ({ nav }) => {
 
             <div className="field">
               <label htmlFor="login-password">Password</label>
-
               <div className="input-affix">
                 <input
                   id="login-password"
@@ -54,7 +57,6 @@ const Login = ({ nav }) => {
                   onChange={e => setPassword(e.target.value)}
                   autoComplete="current-password"
                 />
-
                 <button
                   className="input-affix-right"
                   onClick={() => setShowPass(v => !v)}
@@ -75,8 +77,7 @@ const Login = ({ nav }) => {
                 />
                 Remember me for 30 days
               </label>
-              <button type="button" className="link-btn" onClick={() => nav('forgot-password')}
-              >
+              <button type="button" className="link-btn" onClick={() => navigate('/forgot-password')}>
                 Forgot password?
               </button>
             </div>
@@ -87,7 +88,7 @@ const Login = ({ nav }) => {
 
             <p className="auth-footer">
               New here?{' '}
-              <a onClick={() => nav('signup')}>Create an account</a>
+              <a onClick={() => navigate('/signup')}>Create an account</a>
             </p>
           </div>
         </div>
