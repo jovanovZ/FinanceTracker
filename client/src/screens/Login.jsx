@@ -1,35 +1,61 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth.js';
 import AuthSide from '../components/AuthSide';
 import { GoogleIcon, AppleIcon, EyeIcon, EyeOffIcon } from '../assets/icons/AuthIcons';
 import '../styles/Auth.css';
 
 const Login = () => {
+  const navigate = useNavigate();
+  const { login } = useAuth();
   const [email, setEmail] = useState('lara@example.com');
   const [password, setPassword] = useState('mypassword123');
   const [showPass, setShowPass] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
-  const navigate = useNavigate();
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = () => {
-    // Začasni fake token dokler backend ne bo nared
-    localStorage.setItem('token', 'fake-jwt-token');
-    navigate('/onboarding');
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    try {
+      const result = await login(email, password);
+      if (result.success) {
+        navigate('/onboarding');
+      } else {
+        setError(result.error || 'Login failed. Please try again.');
+      }
+    } catch (err) {
+      setError('An error occurred. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="auth-root">
       <div className="auth-wrap">
         <AuthSide />
-
         <div className="auth-form-wrap">
-          <div className="auth-form">
+          <form className="auth-form" onSubmit={handleSubmit}>
             <h1>Welcome back</h1>
             <p className="auth-form-sub">Log in to pick up where you left off.</p>
 
+            {error && (
+              <div style={{
+                padding: '12px', marginBottom: '16px',
+                backgroundColor: '#fee', color: '#c33',
+                borderRadius: '8px', fontSize: '14px'
+              }}>
+                {error}
+              </div>
+            )}
+
             <div className="auth-sso">
-              <button className="sso-btn"><GoogleIcon /> Google</button>
-              <button className="sso-btn"><AppleIcon /> Apple</button>
+              <button type="button" className="sso-btn"><GoogleIcon /> Google</button>
+              <button type="button" className="sso-btn"><AppleIcon /> Apple</button>
             </div>
 
             <div className="divider">or with email</div>
@@ -43,6 +69,7 @@ const Login = () => {
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 autoComplete="email"
+                required
               />
             </div>
 
@@ -56,6 +83,7 @@ const Login = () => {
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   autoComplete="current-password"
+                  required
                 />
                 <button
                   className="input-affix-right"
@@ -82,15 +110,15 @@ const Login = () => {
               </button>
             </div>
 
-            <button className="btn-primary" onClick={handleSubmit}>
-              Log in →
+            <button type="submit" className="btn-primary" disabled={loading}>
+              {loading ? 'Logging in...' : 'Log in →'}
             </button>
 
             <p className="auth-footer">
               New here?{' '}
               <a onClick={() => navigate('/signup')}>Create an account</a>
             </p>
-          </div>
+          </form>
         </div>
       </div>
     </div>

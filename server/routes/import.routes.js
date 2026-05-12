@@ -1,9 +1,9 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const { protect } = require('../middleware/auth.middleware');
-const upload = require('../middleware/upload.middleware');
-const { importCSV } = require('../controllers/importController');
+import protect from '../middleware/authMiddleware.js';
+import upload from '../middleware/upload.middleware.js';
+import importCSV from '../controllers/importController.js';
 
-router.post('/csv', protect, upload.single('file'), importCSV);
+router.post('/csv', upload.single('file'), importCSV);
 
-module.exports = router;
+export default router;

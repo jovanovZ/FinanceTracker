@@ -1,5 +1,9 @@
 import { useEffect, useState } from 'react'
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
+import { useAuth } from './hooks/useAuth.js'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import ProtectedRoute from './components/ProtectedRoute'
+
 import Profile from './screens/Profile.jsx'
 import Login from './screens/Login'
 import ForgotPassword from './screens/ForgotPassword'
@@ -66,6 +70,14 @@ function useTheme() {
 }
 
 function Sidebar({ active }) {
+  const navigate = useNavigate();
+  const { logout, user } = useAuth();
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login');
+  };
+
   return (
     <aside className="sidebar">
       <div className="sidebar-brand">
@@ -118,11 +130,27 @@ function Sidebar({ active }) {
       </div>
 
       <div className="sidebar-user">
-        <div className="sidebar-user-avatar">LK</div>
-        <div style={{ lineHeight: 1.25 }}>
-          <div className="sidebar-user-name">Lara Kovač</div>
-          <div className="sidebar-user-email">lara@example.com</div>
+        <div className="sidebar-user-avatar">{user?.name?.[0]?.toUpperCase() || 'LK'}</div>
+        <div style={{ lineHeight: 1.25, flex: 1 }}>
+          <div className="sidebar-user-name">{user?.name || 'Lara Kovač'}</div>
+          <div className="sidebar-user-email">{user?.email || 'lara@example.com'}</div>
         </div>
+        <button 
+          type="button" 
+          onClick={handleLogout}
+          style={{
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            padding: '4px 8px',
+            fontSize: '12px',
+            color: 'var(--text-secondary)',
+            opacity: 0.7,
+          }}
+          title="Logout"
+        >
+          Logout
+        </button>
       </div>
     </aside>
   )
@@ -171,35 +199,88 @@ function Topbar({ theme, toggleTheme }) {
 
 function App() {
   const [theme, toggleTheme] = useTheme()
+  const { isAuthenticated, loading } = useAuth();
 
-  if (screen === 'forgot-password') {
+  // Počakaj, da se auth state naloži
+  if (loading) {
     return (
-      <>
-        <ForgotPassword nav={nav} />
-        <button
-          className="theme-toggle"
-          onClick={toggleTheme}
-          aria-label="Toggle theme"
-        >
-          <Ic name={theme === 'dark' ? 'sun' : 'moon'} size={18} />
-        </button>
-      </>
-    )
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh' 
+      }}>
+        Loading...
+      </div>
+    );
+  }
+
+  // Če uporabnik ni prijavljen, preusmeri na login
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
   }
 
   return (
-    <div className="app">
-      <Sidebar active="profile" />
-      <div className="main">
-        <Topbar theme={theme} toggleTheme={toggleTheme} />
-        <div className="content">
-          <Routes>
-            <Route path="/profile"  element={<Profile />} />
-            <Route path="*"         element={<Navigate to="/login" replace />} />
-          </Routes>
-        </div>
-      </div>
-    </div>
+    <BrowserRouter>
+      <Routes>
+
+        {/* Login */}
+        <Route
+          path="/login"
+          element={
+            <>
+              <Login />
+              <button
+                className="theme-toggle"
+                onClick={toggleTheme}
+                aria-label="Toggle theme"
+              >
+                <Ic name={theme === 'dark' ? 'sun' : 'moon'} size={18} />
+              </button>
+            </>
+          }
+        />
+
+        {/* Forgot password */}
+        <Route
+          path="/forgot-password"
+          element={
+            <>
+              <ForgotPassword />
+              <button
+                className="theme-toggle"
+                onClick={toggleTheme}
+                aria-label="Toggle theme"
+              >
+                <Ic name={theme === 'dark' ? 'sun' : 'moon'} size={18} />
+              </button>
+            </>
+          }
+        />
+
+        {/* Protected dashboard */}
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <div className="app">
+                <Sidebar active="profile" />
+                <div className="main">
+                  <Topbar theme={theme} toggleTheme={toggleTheme} />
+                  <div className="content">
+                    <Profile />
+                  </div>
+                </div>
+              </div>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Default redirect */}
+        <Route path="*" element={<Navigate to="/login" replace />} />
+
+      </Routes>
+    </BrowserRouter>
   )
 }
 
