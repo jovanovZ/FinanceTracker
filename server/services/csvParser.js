@@ -1,5 +1,5 @@
-const csvParser = require('csv-parser');
-const { Readable } = require('stream');
+import csvParser from 'csv-parser';
+import { Readable } from 'stream';
 
 const REQUIRED_HEADERS = ['Datum', 'Opis transakcije', 'Znesek'];
 
@@ -43,7 +43,7 @@ function parseCSVBuffer(buffer) {
 
         results.push({
           date: datum,
-          description: (row['Opis transakcije'] || '').trim(),
+          desc: (row['Opis transakcije'] || '').trim(),
           amount: znesek,
           type: znesek >= 0 ? 'income' : 'expense',
         });
@@ -53,4 +53,4 @@ function parseCSVBuffer(buffer) {
   });
 }
 
-module.exports = { parseCSVBuffer };
+export default parseCSVBuffer;
