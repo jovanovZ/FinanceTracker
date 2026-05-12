@@ -11,6 +11,7 @@ import { appendFileSync } from 'fs';
 import IndexRouter from './routes/index.routes.js';
 import CategoryRouter from './routes/category.routes.js'
 import TransactionRouter from './routes/transaction.routes.js';
+import AuthRouter from './routes/auth.routes.js';
 import ImportRouter from './routes/import.routes.js';
 
 var app = express();
@@ -48,6 +49,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/',IndexRouter)
 app.use('/category',CategoryRouter)
 app.use('/transaction',TransactionRouter)
+app.use('/auth',AuthRouter)
 app.use('/import',ImportRouter)
 
 // error handler
