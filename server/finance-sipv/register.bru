@@ -1,0 +1,24 @@
+meta {
+  name: register
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{API_URL}}/auth/register
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "name":"nejc1",
+    "password":"nejc",
+    "email":"nejc@nejc.si"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

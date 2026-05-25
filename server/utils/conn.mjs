@@ -3,7 +3,9 @@ import dotenv from 'dotenv'
 dotenv.config();
 
 const connectionString = process.env.MONGO_URI;
-const client = new MongoClient(connectionString);
+const client = new MongoClient(uri, {
+   minPoolSize: 10
+});
 let conn;
 
 try {
