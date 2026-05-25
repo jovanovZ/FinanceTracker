@@ -11,8 +11,7 @@ const transactionSchema = new mongoose.Schema(
 
         // Ime prodajalca npr. Lidl
         merchant: {
-            type: String, 
-            required: true, 
+            type: String,
         },
 
         desc: {
@@ -32,8 +31,8 @@ const transactionSchema = new mongoose.Schema(
 
         // Kategorija naprimer "Transport"
         cat: {
-            type: String, 
-            required: true, 
+            type: String,
+            default: '',
         },
 
         // Iz katerega računa se je bil uvoz
