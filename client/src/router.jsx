@@ -9,6 +9,7 @@ import Onboarding from './screens/Onboarding'
 import Profile from './screens/Profile'
 import Dashboard from './screens/Dashboard'
 import Settings from './screens/Settings'
+import Transactions from "./screens/Transactions"
 
 export default function Router() {
   return (
@@ -27,6 +28,7 @@ export default function Router() {
             <Route path="/profile" element={<Profile />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/transactions" element={<Transactions />} />
           </Route>
         </Route>
         <Route path="*" element={<Navigate to="/login" replace />} />
