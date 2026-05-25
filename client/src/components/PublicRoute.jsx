@@ -6,5 +6,5 @@ export default function PublicRoute() {
 
   if (loading) return <div>Loading...</div>;
 
-  return isAuthenticated ? <Navigate to="/profile" replace /> : <Outlet />;
+  return isAuthenticated ? <Navigate to="/dashboard" replace /> : <Outlet />;
 }
