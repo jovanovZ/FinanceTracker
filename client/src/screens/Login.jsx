@@ -25,9 +25,13 @@ const Login = () => {
     setLoading(true)
     try {
       const result = await login(email, password)
-      if (!result.success) setError(result.error || 'Login failed.')
+      if (result.success) {
+        navigate('/onboarding')
+      } else {
+        setError(result.error || 'Login failed. Please try again.')
+      }
     } catch {
-      setError('An error occurred.')
+      setError('An error occurred. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -40,7 +44,7 @@ const Login = () => {
         <div className="auth-form-wrap">
           <form className="auth-form" onSubmit={handleSubmit}>
             <h1>Welcome back</h1>
-            <p className="auth-form-sub">Log in to pick up where you left off.</p>
+            <p className="auth-form-sub">Log up to pick up where you left off.</p>
 
             {error && (
               <div style={{ padding: '12px', marginBottom: '16px', backgroundColor: '#fee', color: '#c33', borderRadius: '8px', fontSize: '14px' }}>
