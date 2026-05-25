@@ -9,6 +9,7 @@ import Landing from './screens/Landing'
 import Onboarding from './screens/Onboarding'
 import Profile from './screens/Profile'
 import Dashboard from './screens/Dashboard'
+import Import from './screens/Import'
 import Settings from './screens/Settings'
 import Transactions from './screens/Transactions'
 import Budgets from './screens/Budgets'
@@ -32,6 +33,7 @@ export default function Router() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/transactions" element={<Transactions />} />
+            <Route path="/import" element={<Import />} />
             <Route path="/budgets" element={<Budgets />} />
             <Route path="/categories" element={<Categories />} />
           </Route>
