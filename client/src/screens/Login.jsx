@@ -25,6 +25,9 @@ const Login = () => {
     setLoading(true)
     try {
       const result = await login(email, password)
+      if (result.success) {
+        navigate(result.user.onboardingDone ? '/dashboard' : '/onboarding')
+      }
       if (!result.success) setError(result.error || 'Login failed.')
     } catch {
       setError('An error occurred.')

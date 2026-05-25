@@ -8,6 +8,7 @@ import Signup from "./screens/Signup";
 import ForgotPassword from "./screens/ForgotPassword";
 import Profile from "./screens/Profile";
 import Dashboard from "./screens/Dashboard";
+// import Onboarding from "./screens/Onboarding";
 
 export default function Router() {
   return (
@@ -26,6 +27,7 @@ export default function Router() {
     <Route element={<AppShell />}>
       <Route path="/profile" element={<Profile />} />
       <Route path="/dashboard" element={<Dashboard />} />
+      {/* <Route path="/onboarding" element={<Onboarding />} /> */}
     </Route>
   </Route>
 

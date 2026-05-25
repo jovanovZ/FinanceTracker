@@ -38,6 +38,9 @@ const Signup = () => {
     setLoading(true)
     try {
       const result = await register({ fullName: name, email, password })
+      if (result.success) {
+        navigate('/onboarding')  // nov user — vedno onboarding
+      }
       if (!result.success) setError(result.error || 'Registration failed.')
     } catch {
       setError('An error occurred.')
