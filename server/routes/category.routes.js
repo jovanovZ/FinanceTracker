@@ -11,12 +11,10 @@ router.use(protect);
 router.route('/')
     .get(CategoryController.list)
     .post(CategoryController.create);
-
 router.route('/:id')
     .get(CategoryController.show)
     .patch(CategoryController.update)
     .delete(CategoryController.remove);
-
 router.use(errorMiddleware);
 
 export default router;

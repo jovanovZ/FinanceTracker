@@ -15,6 +15,7 @@ import AuthRouter from './routes/auth.routes.js';
 import ImportRouter from './routes/import.routes.js';
 // import GoalsRouter from "./routes/goals.routes.js"; // TODO: fix getGoalById missing in goalsController
 import { connectDB } from './config/db.js';
+import BudgetRouter from "./routes/budgetRoutes.js";
 
 dotenv.config();
 connectDB();
@@ -49,6 +50,7 @@ app.use('/category', CategoryRouter);
 app.use('/transaction', TransactionRouter);
 app.use('/import', ImportRouter);
 // app.use("/goals", GoalsRouter);
+app.use("/budgets", BudgetRouter);
 
 // 404 handler
 app.use(function(req, res, next) {

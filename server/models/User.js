@@ -1,6 +1,5 @@
 import mongoose from 'mongoose'
 import bcrypt from 'bcryptjs'
-
 const userSchema = new mongoose.Schema(
   {
     // Osnovni podatki
@@ -82,7 +81,8 @@ userSchema.pre('save', async function () {
 })
 
 // Metoda za primerjavo gesla
-userSchema.methods.matchPassword = async function (enteredPassword) {
+userSchema.methods.matchPassword = async function (enteredPassword,) {
+  console.log(this.password);
   return await bcrypt.compare(enteredPassword, this.password)
 }
 

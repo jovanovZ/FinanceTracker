@@ -5,6 +5,8 @@ services:
     restart: always
     ports:
       - 27017:27017
+    networks:
+      - sipv
     #volumes: #TODO ko bo na voljo neki zacetni podatki grejo sem
     #  - mongodb_data:/data/db
     environment:
@@ -18,6 +20,8 @@ services:
     container_name: mongo-express
     image: mongo-express
     restart: always
+    networks:
+      - sipv
     ports:
       - 8081:8081
     environment:
