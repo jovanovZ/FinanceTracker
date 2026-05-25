@@ -22,6 +22,23 @@ export const getGoals = async (req, res) => {
   }
 };
 
+export const getGoalById = async (req, res) => {
+  try {
+    const goal = await Goal.findOne({
+      _id: req.params.id,
+      user: req.user._id,
+    });
+
+    if (!goal) {
+      return res.status(404).json({ message: "Goal not found" });
+    }
+
+    res.json(withStats(goal));
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 export const createGoal = async (req, res) => {
   try {
     const goal = await Goal.create({
