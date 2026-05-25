@@ -2,6 +2,8 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import { useAuth } from './hooks/useAuth'
 import { useTheme } from './hooks/useTheme'
+import { TransactionModalProvider } from './context/TransactionsModalContext.jsx'
+import { addTransaction } from './services/transactionService.js'
 
 const NAV_MAIN = [
   { id: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
@@ -180,6 +182,7 @@ export default function AppShell() {
   const active = pathname.slice(1)
 
   return (
+  <TransactionModalProvider onSuccess={(data) => addTransaction(data)}>
     <div className="app">
       <Sidebar active={active} />
       <div className="main">
@@ -189,5 +192,6 @@ export default function AppShell() {
         </div>
       </div>
     </div>
+    </TransactionModalProvider>
   )
 }
