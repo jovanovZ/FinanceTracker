@@ -1,6 +1,7 @@
 import express from 'express';
 import errorHandler from '../middleware/errorMiddleware.js';
 import protect  from '../middleware/authMiddleware.js';
+import BudgetController from '../controllers/budgetController.js';
 
 const router = express.Router();
 router.use(protect); 

@@ -12,6 +12,7 @@ import Dashboard from './screens/Dashboard'
 import Settings from './screens/Settings'
 import Transactions from './screens/Transactions'
 import Budgets from './screens/Budgets'
+import Categories from './screens/Categories'
 
 export default function Router() {
   return (
@@ -32,6 +33,7 @@ export default function Router() {
             <Route path="/settings" element={<Settings />} />
             <Route path="/transactions" element={<Transactions />} />
             <Route path="/budgets" element={<Budgets />} />
+            <Route path="/categories" element={<Categories />} />
           </Route>
         </Route>
 
