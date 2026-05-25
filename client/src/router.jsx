@@ -1,41 +1,42 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import ProtectedRoute from "./components/ProtectedRoute";
-import PublicRoute from "./components/PublicRoute";
-
-import AppShell from "./AppShell";
-import Login from "./screens/Login";
-import Signup from "./screens/Signup";
-import ForgotPassword from "./screens/ForgotPassword";
-import Profile from "./screens/Profile";
-import Dashboard from "./screens/Dashboard";
-import Budgets from "./screens/Budgets";
-import Landing from "./screens/Landing";
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import ProtectedRoute from './components/ProtectedRoute'
+import PublicRoute from './components/PublicRoute'
+import AppShell from './AppShell'
+import Login from './screens/Login'
+import Signup from './screens/Signup'
+import ForgotPassword from './screens/ForgotPassword'
+import Landing from './screens/Landing'
+import Onboarding from './screens/Onboarding'
+import Profile from './screens/Profile'
+import Dashboard from './screens/Dashboard'
+import Settings from './screens/Settings'
+import Transactions from './screens/Transactions'
+import Budgets from './screens/Budgets'
 
 export default function Router() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route element={<PublicRoute />}>
+          <Route path="/" element={<Landing />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+        </Route>
 
-  {/* public routes */}
-  <Route element={<PublicRoute />}>
-    <Route path="/" element={<Landing />} />
-    <Route path="/login" element={<Login />} />
-    <Route path="/signup" element={<Signup />} />
-    <Route path="/forgot-password" element={<ForgotPassword />} />
-  </Route>
+        <Route element={<ProtectedRoute />}>
+          <Route path="/onboarding" element={<Onboarding />} />
+          <Route element={<AppShell />}>
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/transactions" element={<Transactions />} />
+            <Route path="/budgets" element={<Budgets />} />
+          </Route>
+        </Route>
 
-  {/* protected routes */}
-  <Route element={<ProtectedRoute />}>
-    <Route element={<AppShell />}>
-      <Route path="/profile" element={<Profile />} />
-      <Route path="/dashboard" element={<Dashboard />} />
-      <Route path="/budgets" element={<Budgets />} />
-    </Route>
-  </Route>
-
-  <Route path="*" element={<Navigate to="/login" replace />} />
-
-</Routes>
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
     </BrowserRouter>
-  );
+  )
 }

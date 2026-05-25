@@ -14,6 +14,7 @@ import {
   getRecentTransactions,
   getInsights,
 } from '../services/dashboardService.js'
+import { useTransactionModal } from '../context/TransactionsModalContext.jsx'
 
 function fmt(n) {
   return new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(n)
@@ -302,6 +303,7 @@ export default function Dashboard() {
   const [insights, setInsights] = useState([])
   const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
+  const { openAddTransaction } = useTransactionModal()
 
   useEffect(() => {
     let cancelled = false
@@ -353,7 +355,7 @@ export default function Dashboard() {
             </svg>
             Export
           </button>
-          <button type="button" className="btn btn-primary btn-sm" /*onClick={() => navigate('/transaction')}*/>
+          <button type="button" className="btn btn-primary btn-sm" onClick={openAddTransaction}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 6 }}>
               <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
             </svg>
@@ -459,7 +461,7 @@ export default function Dashboard() {
             <div style={{ fontSize: 15, fontWeight: 600 }}>Recent transactions</div>
             <div style={{ fontSize: 12, color: 'var(--text-3)' }}>Latest activity across your accounts</div>
           </div>
-          <button type="button" className="btn btn-ghost btn-sm" /*onClick={() => navigate('/transactions')}*/>See all →</button>
+          <button type="button" className="btn btn-ghost btn-sm" onClick={() => navigate('/transactions')}>See all →</button>
         </div>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
