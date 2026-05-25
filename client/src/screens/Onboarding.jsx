@@ -306,29 +306,49 @@ const Onboarding = () => {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 32, paddingTop: 20, borderTop: '1px solid var(--line)' }}>
           <button
             type="button"
-            className="btn btn-ghost btn-sm"
             onClick={handleBack}
             disabled={step === 0}
+            style={{
+              height: 36, padding: '0 14px',
+              borderRadius: 8, border: '1px solid var(--line)',
+              background: 'var(--surface)', color: 'var(--text-2)',
+              fontSize: 12.5, fontWeight: 600, cursor: 'pointer',
+              opacity: step === 0 ? 0.4 : 1,
+            }}
           >
-            ← Back
+          ← Back
           </button>
-          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-            {!isLast && (
-                <button type="button" className="btn btn-ghost btn-sm" onClick={handleSkip}
-                  style={{ height: 32, display: 'flex', alignItems: 'center' }}>
-                    Skip
-                </button>
-            )}
-            <button type="button" className="btn btn-primary btn-sm" onClick={handleNext}
-              style={{ height: 32, display: 'flex', alignItems: 'center', gap: 6 }}>
-              {isLast ? 'Go to Dashboard' : (
-                <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  Continue <Ic name="arrowRight" size={14} />
-                </span>
-              )}
+
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          {!isLast && (
+            <button
+              type="button"
+              onClick={handleSkip}
+              style={{
+                height: 36, padding: '0 14px',
+                borderRadius: 8, border: '1px solid var(--line)',
+                background: 'var(--surface)', color: 'var(--text-2)',
+                fontSize: 12.5, fontWeight: 600, cursor: 'pointer',
+              }}
+            >
+            Skip
             </button>
-          </div>
+          )}
+          <button
+            type="button"
+            onClick={handleNext}
+            style={{
+              height: 36, padding: '0 14px',
+              borderRadius: 8, border: 'none',
+              background: 'var(--accent)', color: '#fff',
+              fontSize: 12.5, fontWeight: 600, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: 6,
+            }}
+          >
+            {isLast ? 'Go to Dashboard' : <>Continue <Ic name="arrowRight" size={14} /></>}
+          </button>
         </div>
+      </div>
       </div>
     </div>
   );

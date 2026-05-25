@@ -1,5 +1,5 @@
 import Budget from "../models/Budget.js";
-import catchAsync from "../utils/catchErrorAsync";
+import catchAsync from "../utils/catchErrorAsync.js";
 import TransactionPkg from "../models/Transaction.js";
 import mongoose from "mongoose";
 
