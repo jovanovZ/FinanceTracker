@@ -1,5 +1,5 @@
 // API client z JWT token handling
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 class ApiClient {
   constructor() {
@@ -42,15 +42,13 @@ class ApiClient {
 
     try {
       const response = await fetch(`${this.baseURL}${endpoint}`, config);
+      const data = await response.json();
       
       // Če je 401, token je neveljaven - odstrani ga
       if (response.status === 401) {
         this.removeToken();
-        window.location.href = '/login';
-        throw new Error('Unauthorized');
+        throw new Error(data.message);
       }
-
-      const data = await response.json();
 
       if (!response.ok) {
         throw new Error(data.message || 'Something went wrong');

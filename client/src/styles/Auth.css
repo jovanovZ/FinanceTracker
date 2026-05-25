@@ -171,6 +171,7 @@ body {
   justify-content: center;
   padding: 2rem;
   background: var(--surface-2);
+  position: relative; /* add this */
 }
 
 .auth-form {
@@ -369,4 +370,27 @@ body {
 .auth-footer a {
   color: var(--accent);
   font-weight: 600;
+}
+
+/* theme button */
+
+.auth-theme-btn {
+  position: absolute;
+  bottom: 1.75rem;
+  right: 1.75rem;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--text-2);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.auth-theme-btn:hover {
+  background: var(--surface-2);
+  color: var(--text-1);
 }

@@ -1,61 +1,49 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth.js';
-import AuthSide from '../components/AuthSide';
-import { GoogleIcon, AppleIcon, EyeIcon, EyeOffIcon } from '../assets/icons/AuthIcons';
-import '../styles/Auth.css';
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../hooks/useAuth.js'
+import { useTheme } from '../hooks/useTheme'
+import AuthSide from '../components/AuthSide'
+import { GoogleIcon, AppleIcon, EyeIcon, EyeOffIcon } from '../assets/icons/AuthIcons'
+import { MoonIcon, SunIcon } from '../assets/icons/ThemeIcons'
+import '../styles/Auth.css'
 
-const Login = ({ nav }) => {
-  const navigate = useNavigate();
-  const { login } = useAuth();
-  
-  const [email, setEmail] = useState('lara@example.com');
-  const [password, setPassword] = useState('mypassword123');
-  const [showPass, setShowPass] = useState(false);
-  const [rememberMe, setRememberMe] = useState(true);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+const Login = () => {
+  const navigate = useNavigate()
+  const { login } = useAuth()
+  const [theme, toggleTheme] = useTheme()
+
+  const [email, setEmail] = useState('lara@example.com')
+  const [password, setPassword] = useState('mypassword123')
+  const [showPass, setShowPass] = useState(false)
+  const [rememberMe, setRememberMe] = useState(true)
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-
+    e.preventDefault()
+    setError('')
+    setLoading(true)
     try {
-      const result = await login(email, password);
-      
-      if (result.success) {
-        // Uspešna prijava - preusmeri na dashboard ali profile
-        navigate('/profile');
-      } else {
-        setError(result.error || 'Login failed. Please try again.');
-      }
-    } catch (err) {
-      setError('An error occurred. Please try again.');
+      const result = await login(email, password)
+      if (!result.success) setError(result.error || 'Login failed.')
+    } catch {
+      setError('An error occurred.')
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   return (
     <div className="auth-root">
       <div className="auth-wrap">
         <AuthSide />
-
         <div className="auth-form-wrap">
           <form className="auth-form" onSubmit={handleSubmit}>
             <h1>Welcome back</h1>
             <p className="auth-form-sub">Log in to pick up where you left off.</p>
 
             {error && (
-              <div style={{ 
-                padding: '12px', 
-                marginBottom: '16px', 
-                backgroundColor: '#fee', 
-                color: '#c33', 
-                borderRadius: '8px',
-                fontSize: '14px'
-              }}>
+              <div style={{ padding: '12px', marginBottom: '16px', backgroundColor: '#fee', color: '#c33', borderRadius: '8px', fontSize: '14px' }}>
                 {error}
               </div>
             )}
@@ -69,37 +57,14 @@ const Login = ({ nav }) => {
 
             <div className="field">
               <label htmlFor="login-email">Email</label>
-              <input
-                id="login-email"
-                className="input"
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                autoComplete="email"
-                required
-              />
+              <input id="login-email" className="input" type="email" value={email} onChange={e => setEmail(e.target.value)} autoComplete="email" required />
             </div>
 
             <div className="field">
               <label htmlFor="login-password">Password</label>
-
               <div className="input-affix">
-                <input
-                  id="login-password"
-                  className="input"
-                  type={showPass ? 'text' : 'password'}
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  autoComplete="current-password"
-                  required
-                />
-
-                <button
-                  className="input-affix-right"
-                  onClick={() => setShowPass(v => !v)}
-                  aria-label={showPass ? 'Hide password' : 'Show password'}
-                  type="button"
-                >
+                <input id="login-password" className="input" type={showPass ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} autoComplete="current-password" required />
+                <button className="input-affix-right" onClick={() => setShowPass(v => !v)} aria-label={showPass ? 'Hide password' : 'Show password'} type="button">
                   {showPass ? <EyeOffIcon /> : <EyeIcon />}
                 </button>
               </div>
@@ -107,39 +72,31 @@ const Login = ({ nav }) => {
 
             <div className="checkbox-row">
               <label className="checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={e => setRememberMe(e.target.checked)}
-                />
+                <input type="checkbox" checked={rememberMe} onChange={e => setRememberMe(e.target.checked)} />
                 Remember me for 30 days
               </label>
-              <button 
-                type="button" 
-                className="link-btn" 
-                onClick={() => nav ? nav('forgot-password') : navigate('/forgot-password')}
-              >
+              <button type="button" className="link-btn" onClick={() => navigate('/forgot-password')}>
                 Forgot password?
               </button>
             </div>
 
-            <button 
-              type="submit" 
-              className="btn-primary" 
-              disabled={loading}
-            >
+            <button type="submit" className="btn-primary" disabled={loading}>
               {loading ? 'Logging in...' : 'Log in →'}
             </button>
 
             <p className="auth-footer">
               New here?{' '}
-              <a onClick={() => nav ? nav('signup') : navigate('/signup')}>Create an account</a>
+              <a onClick={() => navigate('/signup')}>Create an account</a>
             </p>
           </form>
+
+          <button type="button" className="auth-theme-btn" onClick={toggleTheme} aria-label="Toggle theme">
+            {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
+          </button>
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default Login;
+export default Login

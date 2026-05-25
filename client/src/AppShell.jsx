@@ -1,16 +1,7 @@
-import { useEffect, useState } from 'react'
-import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
-import { useAuth } from './hooks/useAuth.js'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import ProtectedRoute from './components/ProtectedRoute'
-
-import Profile from './screens/Profile.jsx'
-import Login from './screens/Login'
-import ForgotPassword from './screens/ForgotPassword'
-
-// AppShell je za zdaj mock za FIN-15. Deluje samo Profile, ostalo je vizualni
-// placeholder. Ko bo task za pravi shell in routing pripravljen, se to celo
-// datoteko zamenja.
+import { Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { useState } from 'react'
+import { useAuth } from './hooks/useAuth'
+import { useTheme } from './hooks/useTheme'
 
 const NAV_MAIN = [
   { id: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
@@ -58,15 +49,6 @@ function Ic({ name, size = 17 }) {
     default:
       return null
   }
-}
-
-function useTheme() {
-  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light')
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme)
-    localStorage.setItem('theme', theme)
-  }, [theme])
-  return [theme, () => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))]
 }
 
 function Sidebar({ active }) {
@@ -197,91 +179,20 @@ function Topbar({ theme, toggleTheme }) {
   )
 }
 
-function App() {
+export default function AppShell() {
   const [theme, toggleTheme] = useTheme()
-  const { isAuthenticated, loading } = useAuth();
-
-  // Počakaj, da se auth state naloži
-  if (loading) {
-    return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        height: '100vh' 
-      }}>
-        Loading...
-      </div>
-    );
-  }
-
-  // Če uporabnik ni prijavljen, preusmeri na login
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
+  const { pathname } = useLocation()
+  const active = pathname.slice(1)
 
   return (
-    <BrowserRouter>
-      <Routes>
-
-        {/* Login */}
-        <Route
-          path="/login"
-          element={
-            <>
-              <Login />
-              <button
-                className="theme-toggle"
-                onClick={toggleTheme}
-                aria-label="Toggle theme"
-              >
-                <Ic name={theme === 'dark' ? 'sun' : 'moon'} size={18} />
-              </button>
-            </>
-          }
-        />
-
-        {/* Forgot password */}
-        <Route
-          path="/forgot-password"
-          element={
-            <>
-              <ForgotPassword />
-              <button
-                className="theme-toggle"
-                onClick={toggleTheme}
-                aria-label="Toggle theme"
-              >
-                <Ic name={theme === 'dark' ? 'sun' : 'moon'} size={18} />
-              </button>
-            </>
-          }
-        />
-
-        {/* Protected dashboard */}
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <div className="app">
-                <Sidebar active="profile" />
-                <div className="main">
-                  <Topbar theme={theme} toggleTheme={toggleTheme} />
-                  <div className="content">
-                    <Profile />
-                  </div>
-                </div>
-              </div>
-            </ProtectedRoute>
-          }
-        />
-
-        {/* Default redirect */}
-        <Route path="*" element={<Navigate to="/login" replace />} />
-
-      </Routes>
-    </BrowserRouter>
+    <div className="app">
+      <Sidebar active={active} />
+      <div className="main">
+        <Topbar theme={theme} toggleTheme={toggleTheme} />
+        <div className="content">
+          <Outlet />
+        </div>
+      </div>
+    </div>
   )
 }
-
-export default App
