@@ -1,4 +1,7 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useTheme } from '../hooks/useTheme'
+import { MoonIcon, SunIcon } from '../assets/icons/ThemeIcons'
 import '../styles/ForgotPassword.css'
 
 function validateEmail(email) {
@@ -11,6 +14,8 @@ export default function ForgotPassword({ nav }) {
     const [email, setEmail] = useState('lara@example.com')
     const [error, setError] = useState('')
     const [sent, setSent] = useState(false)
+    const [theme, toggleTheme] = useTheme()
+    const navigate = useNavigate()
 
     function handleSubmit(e) {
         e.preventDefault()
@@ -86,14 +91,14 @@ export default function ForgotPassword({ nav }) {
 
                     <div className="forgot-bottom">
                         Remembered your password?{' '}
-                        <span onClick={() => nav('login')}>
+                        <span onClick={() => navigate('/login')}>
                             Log in
                         </span>
                     </div>
                 </form>
 
-                <button type="button" className="forgot-theme-btn">
-                    ☾
+                <button type="button" className="forgot-theme-btn" onClick={toggleTheme} aria-label="Toggle theme">
+                    {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
                 </button>
             </section>
         </div>
