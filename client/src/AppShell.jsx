@@ -2,6 +2,8 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import { useAuth } from './hooks/useAuth'
 import { useTheme } from './hooks/useTheme'
+import { TransactionModalProvider } from './context/TransactionsModalContext.jsx'
+import { addTransaction } from './services/transactionService.js'
 
 const NAV_MAIN = [
   { id: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
@@ -70,13 +72,12 @@ function Sidebar({ active }) {
       <div className="sidebar-section-label">Workspace</div>
       <div className="sidebar-nav">
         {NAV_MAIN.map((n) => (
-          <button
-            key={n.id}
-            type="button"
-            className={`sidebar-item ${active === n.id ? 'active' : ''}`}
-            disabled
-            title="Coming soon"
-          >
+      <button
+        key={n.id}
+        type="button"
+        className={`sidebar-item ${active === n.id ? 'active' : ''}`}
+        onClick={() => navigate(`/${n.id}`)}
+      >
             <Ic name={n.icon} />
             <span>{n.label}</span>
             {n.count && <span className="count">{n.count}</span>}
@@ -86,21 +87,17 @@ function Sidebar({ active }) {
 
       <div className="sidebar-section-label">Account</div>
       <div className="sidebar-nav">
-        {NAV_BOTTOM.map((n) => {
-          const enabled = n.id === 'profile'
-          return (
-            <button
-              key={n.id}
-              type="button"
-              className={`sidebar-item ${active === n.id ? 'active' : ''}`}
-              disabled={!enabled}
-              title={enabled ? '' : 'Coming soon'}
-            >
-              <Ic name={n.icon} />
-              <span>{n.label}</span>
-            </button>
-          )
-        })}
+      {NAV_BOTTOM.map((n) => (
+        <button
+          key={n.id}
+          type="button"
+          className={`sidebar-item ${active === n.id ? 'active' : ''}`}
+          onClick={() => navigate(`/${n.id}`)}
+        >
+          <Ic name={n.icon} />
+          <span>{n.label}</span>
+        </button>
+      ))}
       </div>
 
       <div className="sidebar-footer">
@@ -185,6 +182,7 @@ export default function AppShell() {
   const active = pathname.slice(1)
 
   return (
+  <TransactionModalProvider onSuccess={(data) => addTransaction(data)}>
     <div className="app">
       <Sidebar active={active} />
       <div className="main">
@@ -194,5 +192,6 @@ export default function AppShell() {
         </div>
       </div>
     </div>
+    </TransactionModalProvider>
   )
 }
