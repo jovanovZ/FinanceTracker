@@ -1,6 +1,5 @@
 import mongoose from 'mongoose'
 import bcrypt from 'bcryptjs'
-import conn from '../utils/conn.js'
 const userSchema = new mongoose.Schema(
   {
     // Osnovni podatki
@@ -21,7 +20,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Password is required'],
       minlength: 8,
-      select: true, // nikoli se ne vrne v API responsu
+      select: false, // nikoli se ne vrne v API responsu
     },
 
     currency: {
@@ -77,9 +76,8 @@ const userSchema = new mongoose.Schema(
 
 // Hash password pred shranjevanjem
 userSchema.pre('save', async function () {
-  if (!this.isModified('password')) return;
+  if (!this.isModified('password')) return
   this.password = await bcrypt.hash(this.password, 12)
-  console.log("in presave", this.password)
 })
 
 // Metoda za primerjavo gesla
