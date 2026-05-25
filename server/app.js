@@ -14,6 +14,7 @@ import TransactionRouter from './routes/transaction.routes.js';
 import AuthRouter from './routes/auth.routes.js';
 import ImportRouter from './routes/import.routes.js';
 import GoalsRouter from "./routes/goals.routes.js";
+import AnalyticsRouter from './routes/analytics.routes.js';
 
 dotenv.config();
 
@@ -47,6 +48,7 @@ app.use('/category', CategoryRouter);
 app.use('/transaction', TransactionRouter);
 app.use('/import', ImportRouter);
 app.use("/goals", GoalsRouter);
+app.use('/analytics', AnalyticsRouter);
 
 // 404 handler
 app.use(function(req, res, next) {
