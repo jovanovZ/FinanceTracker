@@ -30,6 +30,8 @@
 
   --good: oklch(0.62 0.14 155);
   --good-soft: oklch(0.95 0.04 155);
+  --warn: oklch(0.72 0.15 75);
+  --warn-soft: oklch(0.96 0.05 75);
   --bad: oklch(0.60 0.18 25);
   --bad-soft: oklch(0.95 0.04 25);
 
@@ -70,6 +72,8 @@
 
   --good: oklch(0.72 0.14 155);
   --good-soft: oklch(0.28 0.06 155);
+  --warn: oklch(0.78 0.15 75);
+  --warn-soft: oklch(0.30 0.08 75);
   --bad: oklch(0.70 0.18 25);
   --bad-soft: oklch(0.30 0.08 25);
 
@@ -300,6 +304,61 @@ a { color: inherit; text-decoration: none; }
   border: 1px solid var(--line);
 }
 .chip.good { background: var(--good-soft); color: var(--good); border-color: transparent; }
+.chip.warn { background: var(--warn-soft); color: var(--warn); border-color: transparent; }
+.chip.accent { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
+
+/* ===== Import stran (FIN-11) ===== */
+/* Auth.css definira globalni .btn-primary { width:100%; height:42px; ... }, ki
+   se lika čez cel app. Tukaj ga nevtraliziramo za to stran, da gumbi ostanejo
+   normalne velikosti. Pravi fix je scopanje Auth.css (ločen issue). */
+.import-page .btn { width: auto; height: auto; margin: 0; }
+
+.mono { font-family: var(--font-mono); }
+
+.step-pill {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 7px 14px 7px 8px;
+  border-radius: 999px;
+  background: var(--surface); border: 1px solid var(--line);
+  font-size: 12.5px; font-weight: 600; color: var(--text-2);
+}
+.step-pill-num {
+  width: 20px; height: 20px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--surface-2); color: var(--text-3);
+  font-size: 11px; font-weight: 700;
+}
+.step-pill.done { color: var(--good); border-color: transparent; background: var(--good-soft); }
+.step-pill.done .step-pill-num { background: var(--good); color: #fff; }
+.step-pill.todo { opacity: 0.55; }
+
+.dropzone {
+  border: 2px dashed var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  padding: 36px 24px;
+  text-align: center;
+  transition: border-color 0.15s, background 0.15s;
+}
+.dropzone.dragover { border-color: var(--accent); background: var(--accent-soft); }
+.dropzone-icon {
+  width: 56px; height: 56px; border-radius: 16px;
+  margin: 0 auto 14px;
+  display: grid; place-items: center;
+  background: var(--surface); border: 1px solid var(--line);
+  color: var(--accent);
+}
+
+.table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.table th {
+  text-align: left; font-weight: 600; color: var(--text-3);
+  padding: 10px 14px; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.06em;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
+}
+.table td { padding: 12px 14px; border-bottom: 1px solid var(--line-2); vertical-align: middle; }
+.table tr:last-child td { border-bottom: none; }
+.table .col-amt { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
 
 /* Stikalo */
 .switch {
