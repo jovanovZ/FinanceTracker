@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const importHistorySchema = new mongoose.Schema(
   {
@@ -115,4 +115,4 @@ importHistorySchema.index(
   { unique: true }
 );
 
-module.exports = mongoose.model("ImportHistory", importHistorySchema);
+export default mongoose.model("ImportHistory", importHistorySchema);
