@@ -1,0 +1,170 @@
+[
+    {
+        "date": "2025-03-01T00:00:00.000Z",
+        "description": "Mesecna najemnina",
+        "amount": -550,
+        "type": "expense",
+        "cat": ""
+    },
+    {
+        "date": "2025-03-02T00:00:00.000Z",
+        "description": "Plača marec",
+        "amount": 1850,
+        "type": "income",
+        "cat": "Salary"
+    },
+    {
+        "date": "2025-03-03T00:00:00.000Z",
+        "description": "Mercator - tedenski nakup",
+        "amount": -66.2,
+        "type": "expense",
+        "cat": "Groceries"
+    },
+    {
+        "date": "2025-03-05T00:00:00.000Z",
+        "description": "Hofer - sadje",
+        "amount": -21.4,
+        "type": "expense",
+        "cat": "Groceries"
+    },
+    {
+        "date": "2025-03-06T00:00:00.000Z",
+        "description": "Bencinska crpalka Petrol",
+        "amount": -55.6,
+        "type": "expense",
+        "cat": "Transport"
+    },
+    {
+        "date": "2025-03-07T00:00:00.000Z",
+        "description": "Lekarna Prizma",
+        "amount": -16.8,
+        "type": "expense",
+        "cat": ""
+    },
+    {
+        "date": "2025-03-09T00:00:00.000Z",
+        "description": "Netflix narocnina",
+        "amount": -15.99,
+        "type": "expense",
+        "cat": "Subscription"
+    },
+    {
+        "date": "2025-03-10T00:00:00.000Z",
+        "description": "Restavracija Julija",
+        "amount": -38.5,
+        "type": "expense",
+        "cat": ""
+    },
+    {
+        "date": "2025-03-11T00:00:00.000Z",
+        "description": "Spotify narocnina",
+        "amount": -9.99,
+        "type": "expense",
+        "cat": "Subscription"
+    },
+    {
+        "date": "2025-03-12T00:00:00.000Z",
+        "description": "Avtobusna karta MO",
+        "amount": -3.6,
+        "type": "expense",
+        "cat": "Transport"
+    },
+    {
+        "date": "2025-03-14T00:00:00.000Z",
+        "description": "Mercator - gospodinjstvo",
+        "amount": -47.3,
+        "type": "expense",
+        "cat": "Groceries"
+    },
+    {
+        "date": "2025-03-15T00:00:00.000Z",
+        "description": "Spletni nakup - oblacila",
+        "amount": -89,
+        "type": "expense",
+        "cat": ""
+    },
+    {
+        "date": "2025-03-17T00:00:00.000Z",
+        "description": "Kosilo v parku",
+        "amount": -8.9,
+        "type": "expense",
+        "cat": ""
+    },
+    {
+        "date": "2025-03-18T00:00:00.000Z",
+        "description": "Elektriko in ogrevanje",
+        "amount": -91,
+        "type": "expense",
+        "cat": ""
+    },
+    {
+        "date": "2025-03-20T00:00:00.000Z",
+        "description": "Hofer - nakup",
+        "amount": -35.6,
+        "type": "expense",
+        "cat": "Groceries"
+    },
+    {
+        "date": "2025-03-21T00:00:00.000Z",
+        "description": "Bencinska crpalka Mol",
+        "amount": -48.3,
+        "type": "expense",
+        "cat": "Transport"
+    },
+    {
+        "date": "2025-03-22T00:00:00.000Z",
+        "description": "Fitnes center Viba",
+        "amount": -29,
+        "type": "expense",
+        "cat": ""
+    },
+    {
+        "date": "2025-03-24T00:00:00.000Z",
+        "description": "Mercator - nakup",
+        "amount": -53.1,
+        "type": "expense",
+        "cat": "Groceries"
+    },
+    {
+        "date": "2025-03-25T00:00:00.000Z",
+        "description": "Freelance placilo",
+        "amount": 450,
+        "type": "income",
+        "cat": ""
+    },
+    {
+        "date": "2025-03-27T00:00:00.000Z",
+        "description": "Knjigarna Konzorcij",
+        "amount": -34,
+        "type": "expense",
+        "cat": ""
+    },
+    {
+        "date": "2025-03-28T00:00:00.000Z",
+        "description": "Kino Colosseum",
+        "amount": -13,
+        "type": "expense",
+        "cat": ""
+    },
+    {
+        "date": "2025-03-29T00:00:00.000Z",
+        "description": "Kosilo pri mami",
+        "amount": 0,
+        "type": "income",
+        "cat": ""
+    },
+    {
+        "date": "2025-03-30T00:00:00.000Z",
+        "description": "Zdravniski pregled",
+        "amount": -25,
+        "type": "expense",
+        "cat": ""
+    },
+    {
+        "date": "2025-03-31T00:00:00.000Z",
+        "description": "Poklon prijatelju",
+        "amount": -30,
+        "type": "expense",
+        "cat": ""
+    }
+]
