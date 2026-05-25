@@ -10,6 +10,7 @@ import Profile from './screens/Profile'
 import Dashboard from './screens/Dashboard'
 import Settings from './screens/Settings'
 import Transactions from "./screens/Transactions"
+import Categories from './screens/Categories'
 
 export default function Router() {
   return (
@@ -29,6 +30,7 @@ export default function Router() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/transactions" element={<Transactions />} />
+            <Route path="/categories" element={<Categories />} />
           </Route>
         </Route>
         <Route path="*" element={<Navigate to="/login" replace />} />
