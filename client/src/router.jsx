@@ -8,6 +8,8 @@ import Signup from "./screens/Signup";
 import ForgotPassword from "./screens/ForgotPassword";
 import Profile from "./screens/Profile";
 import Dashboard from "./screens/Dashboard";
+import Budgets from "./screens/Budgets";
+import Landing from "./screens/Landing";
 
 export default function Router() {
   return (
@@ -16,6 +18,7 @@ export default function Router() {
 
   {/* public routes */}
   <Route element={<PublicRoute />}>
+    <Route path="/" element={<Landing />} />
     <Route path="/login" element={<Login />} />
     <Route path="/signup" element={<Signup />} />
     <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -26,6 +29,7 @@ export default function Router() {
     <Route element={<AppShell />}>
       <Route path="/profile" element={<Profile />} />
       <Route path="/dashboard" element={<Dashboard />} />
+      <Route path="/budgets" element={<Budgets />} />
     </Route>
   </Route>
 
