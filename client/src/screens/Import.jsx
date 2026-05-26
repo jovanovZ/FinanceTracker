@@ -1,11 +1,6 @@
-// Import stran (FIN-11). Naloži CSV banke, ga parsa na clientu, predlaga
-// kategorije in shrani zgodovino uvozov. Podatki gredo skozi importService,
-// ki je za zdaj mock z localStorage.
-
 import { useEffect, useRef, useState } from 'react'
 import {
-  parseCsvFile,
-  analyze,
+  // keep getHistory, saveImport, CSV_TEMPLATE if still used
   getHistory,
   saveImport,
   CSV_TEMPLATE,
@@ -14,6 +9,7 @@ import {
 const PREVIEW_LIMIT = 6
 const MAX_SIZE_MB = 10
 
+// ... keep Ic, downloadTemplate, monthLabel as before ...
 function Ic({ name, size = 16 }) {
   const s = { width: size, height: size }
   const stroke = { fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' }
@@ -34,7 +30,6 @@ function Ic({ name, size = 16 }) {
       return null
   }
 }
-
 function downloadTemplate() {
   const blob = new Blob([CSV_TEMPLATE], { type: 'text/csv' })
   const url = URL.createObjectURL(blob)
@@ -46,7 +41,7 @@ function downloadTemplate() {
 }
 
 export default function Import() {
-  const [parsed, setParsed] = useState(null) // { fileName, columns, items, summary }
+  const [parsed, setParsed] = useState(null) // now holds server response + meta
   const [parsing, setParsing] = useState(false)
   const [importing, setImporting] = useState(false)
   const [dragOver, setDragOver] = useState(false)
@@ -65,6 +60,17 @@ export default function Import() {
     setTimeout(() => setToast(null), 2500)
   }
 
+  // Build a summary object from server items
+  function buildSummary(fileName, items) {
+    const total = items.length
+    const duplicates = items.filter((i) => i.duplicate).length // server may include duplicate flag
+    const fresh = total - duplicates
+    const dates = items.map((i) => i.date).filter(Boolean).map((d) => new Date(d))
+    const dateFrom = dates.length ? new Date(Math.min(...dates)).toISOString().slice(0, 10) : ''
+    const dateTo = dates.length ? new Date(Math.max(...dates)).toISOString().slice(0, 10) : ''
+    return { total, duplicates, fresh, dateFrom, dateTo }
+  }
+
   async function handleFile(file) {
     if (!file) return
     if (!file.name.toLowerCase().endsWith('.csv')) {
@@ -77,9 +83,46 @@ export default function Import() {
     }
     setParsing(true)
     try {
-      const { fileName, headers, rows } = await parseCsvFile(file)
-      const { columns, items, summary } = analyze(rows, headers)
-      setParsed({ fileName, columns, items, summary })
+      const urlBase = import.meta.env.VITE_API_URL
+      if (!urlBase) throw new Error('API URL not configured')
+      const url = `${urlBase.replace(/\/$/, '')}/import/csv`
+
+      const fd = new FormData()
+      fd.append('file', file)
+
+      const res = await fetch(url, {
+        method: 'POST',
+        body: fd,
+      })
+
+      if (!res.ok) {
+        const text = await res.text().catch(() => null)
+        throw new Error(text || `Server returned ${res.status}`)
+      }
+
+      const items = await res.json()
+
+      // Normalize items: ensure each has id, date (ISO), desc, amount, category, isSub, type, duplicate flag
+      const normalized = items.map((it, idx) => ({
+        id: it.id ?? `${Date.now()}-${idx}`,
+        date: it.date ?? '',
+        desc: it.description ?? it.description === '' ? it.description : it.desc ?? '',
+        amount: typeof it.amount === 'number' ? it.amount : Number(it.amount) || 0,
+        amountRaw: it.amount,
+        category: it.cat ?? it.category ?? '',
+        type: it.type ?? '',
+        isSub: !!it.isSub,
+        duplicate: !!it.duplicate,
+      }))
+
+      const summary = buildSummary(file.name, normalized)
+
+      setParsed({
+        fileName: file.name,
+        columns: { date: '', desc: '', amount: '', currency: '' }, // server does mapping
+        items: normalized,
+        summary,
+      })
     } catch (err) {
       showToast(err.message || 'Napaka pri branju datoteke', 'bad')
     } finally {
@@ -89,7 +132,7 @@ export default function Import() {
 
   function onInputChange(e) {
     handleFile(e.target.files?.[0])
-    e.target.value = '' // dovoli ponovni izbor iste datoteke
+    e.target.value = '' // allow reselect same file
   }
 
   function onDrop(e) {
@@ -102,10 +145,20 @@ export default function Import() {
     setParsed(null)
   }
 
+  // Editable fields handlers
+  function updateItem(id, patch) {
+    setParsed((p) => {
+      if (!p) return p
+      const items = p.items.map((it) => (it.id === id ? { ...it, ...patch } : it))
+      return { ...p, items, summary: buildSummary(p.fileName, items) }
+    })
+  }
+
   async function confirmImport() {
     if (!parsed) return
     setImporting(true)
     try {
+      // For saving we keep existing saveImport signature; adjust if your API expects different payload
       const next = await saveImport({
         fileName: parsed.fileName,
         label: monthLabel(parsed.summary.dateTo),
@@ -188,7 +241,7 @@ export default function Import() {
                 <div style={{ marginBottom: 16 }}>
                   <h3 style={{ margin: 0, fontSize: 15, fontWeight: 600 }}>Map your columns</h3>
                   <p style={{ margin: '2px 0 0', fontSize: 12.5, color: 'var(--text-3)' }}>
-                    We detected these from <span className="mono" style={{ color: 'var(--text-2)' }}>{parsed.fileName}</span>
+                    Server-provided mapping from <span className="mono" style={{ color: 'var(--text-2)' }}>{parsed.fileName}</span>
                   </p>
                 </div>
                 <div className="grid grid-2" style={{ gap: 12 }}>
@@ -218,32 +271,65 @@ export default function Import() {
                       Preview · first {Math.min(PREVIEW_LIMIT, parsed.items.length)} of {parsed.summary.total} rows
                     </h3>
                     <p style={{ margin: '2px 0 0', fontSize: 12.5, color: 'var(--text-3)' }}>
-                      Auto-categorized · {parsed.summary.duplicates} duplicate{parsed.summary.duplicates === 1 ? '' : 's'} flagged
+                      Server-categorized · {parsed.summary.duplicates} duplicate{parsed.summary.duplicates === 1 ? '' : 's'} flagged
                     </p>
                   </div>
                 </div>
+
+                {/* Editable table */}
                 <table className="table">
                   <thead>
                     <tr>
-                      <th>Date</th><th>Description</th><th>Suggested category</th><th style={{ textAlign: 'right' }}>Amount</th>
+                      <th>Date</th><th>Description</th><th>Category</th><th style={{ textAlign: 'right' }}>Amount</th><th>Sub?</th>
                     </tr>
                   </thead>
                   <tbody>
                     {parsed.items.slice(0, PREVIEW_LIMIT).map((r) => (
                       <tr key={r.id} style={r.duplicate ? { opacity: 0.5 } : undefined}>
-                        <td className="mono" style={{ color: 'var(--text-3)', fontSize: 13 }}>{r.date || '—'}</td>
-                        <td className="mono" style={{ fontSize: 12.5 }}>
-                          {r.desc || '—'}
+                        <td className="mono" style={{ color: 'var(--text-3)', fontSize: 13 }}>
+                          <input
+                            type="date"
+                            value={r.date ? r.date.slice(0, 10) : ''}
+                            onChange={(e) => updateItem(r.id, { date: e.target.value ? new Date(e.target.value).toISOString() : '' })}
+                          />
+                        </td>
+                        <td style={{ fontSize: 12.5 }}>
+                          <input
+                            type="text"
+                            value={r.desc || ''}
+                            onChange={(e) => updateItem(r.id, { desc: e.target.value })}
+                            style={{ width: '100%' }}
+                          />
                           {r.duplicate && <span className="chip warn" style={{ marginLeft: 8 }}>duplicate</span>}
                         </td>
-                        <td><span className="chip accent"><Ic name="sparkles" size={11} /> {r.category}</span></td>
-                        <td className="col-amt" style={{ color: r.amount > 0 ? 'var(--good)' : 'var(--text)' }}>
-                          €{Number.isNaN(r.amount) ? r.amountRaw : r.amount.toFixed(2)}
+                        <td>
+                          <input
+                            type="text"
+                            value={r.category || ''}
+                            onChange={(e) => updateItem(r.id, { category: e.target.value })}
+                          />
+                        </td>
+                        <td className="col-amt" style={{ color: r.amount > 0 ? 'var(--good)' : 'var(--text)', textAlign: 'right' }}>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={Number.isFinite(r.amount) ? r.amount : ''}
+                            onChange={(e) => updateItem(r.id, { amount: parseFloat(e.target.value) || 0 })}
+                            style={{ width: 100, textAlign: 'right' }}
+                          />
+                        </td>
+                        <td style={{ textAlign: 'center' }}>
+                          <input
+                            type="checkbox"
+                            checked={!!r.isSub}
+                            onChange={(e) => updateItem(r.id, { isSub: e.target.checked })}
+                          />
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
+
                 <div style={{ padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--line)' }}>
                   <span style={{ fontSize: 12.5, color: 'var(--text-3)' }}>
                     {parsed.summary.fresh} new · {parsed.summary.duplicates} duplicate{parsed.summary.duplicates === 1 ? '' : 's'} will be skipped
@@ -316,10 +402,4 @@ export default function Import() {
       {toast && <div className={`toast ${toast.tone === 'bad' ? 'bad' : ''}`}>{toast.text}</div>}
     </div>
   )
-}
-
-function monthLabel(iso) {
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return 'Import'
-  return d.toLocaleDateString(undefined, { month: 'short', year: 'numeric' })
 }
