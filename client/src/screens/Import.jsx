@@ -30,6 +30,12 @@ function Ic({ name, size = 16 }) {
       return null
   }
 }
+function monthLabel(dateStr) {
+  if (!dateStr) return ''
+  const d = new Date(dateStr)
+  return d.toLocaleString('sl-SI', { month: 'long', year: 'numeric' })
+}
+
 function downloadTemplate() {
   const blob = new Blob([CSV_TEMPLATE], { type: 'text/csv' })
   const url = URL.createObjectURL(blob)
@@ -47,13 +53,30 @@ export default function Import() {
   const [dragOver, setDragOver] = useState(false)
   const [history, setHistory] = useState([])
   const [toast, setToast] = useState(null)
+  const [historyKey, setHistoryKey] = useState(0)
   const fileInputRef = useRef(null)
 
   useEffect(() => {
     let cancelled = false
-    getHistory().then((h) => !cancelled && setHistory(h))
+    const url = `${(import.meta.env.VITE_API_URL || 'http://localhost:3000').replace(/\/$/, '')}/import/history`
+    const token = localStorage.getItem('authToken')
+    fetch(url, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+      .then((r) => r.json())
+      .then((data) => {
+        if (!cancelled && data.history) {
+          setHistory(data.history.map((h) => ({
+            id: h._id,
+            fileName: h.fileName,
+            rows: h.importedRecords,
+            failed: h.failedRecords,
+            status: h.status,
+            date: h.createdAt ? new Date(h.createdAt).toLocaleDateString('sl-SI') : '',
+          })))
+        }
+      })
+      .catch(() => {})
     return () => { cancelled = true }
-  }, [])
+  }, [historyKey])
 
   function showToast(text, tone = 'good') {
     setToast({ text, tone })
@@ -90,9 +113,11 @@ export default function Import() {
       const fd = new FormData()
       fd.append('file', file)
 
+      const token = localStorage.getItem('authToken')
       const res = await fetch(url, {
         method: 'POST',
         body: fd,
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
       })
 
       if (!res.ok) {
@@ -100,7 +125,8 @@ export default function Import() {
         throw new Error(text || `Server returned ${res.status}`)
       }
 
-      const items = await res.json()
+      const data = await res.json()
+      const items = data.transactions ?? data
 
       // Normalize items: ensure each has id, date (ISO), desc, amount, category, isSub, type, duplicate flag
       const normalized = items.map((it, idx) => ({
@@ -119,7 +145,7 @@ export default function Import() {
 
       setParsed({
         fileName: file.name,
-        columns: { date: '', desc: '', amount: '', currency: '' }, // server does mapping
+        columns: { date: 'Datum', desc: 'Opis transakcije', amount: 'Znesek', currency: 'EUR (privzeto)' },
         items: normalized,
         summary,
       })
@@ -158,7 +184,23 @@ export default function Import() {
     if (!parsed) return
     setImporting(true)
     try {
-      // For saving we keep existing saveImport signature; adjust if your API expects different payload
+      const url = `${(import.meta.env.VITE_API_URL || 'http://localhost:3000').replace(/\/$/, '')}/import/confirm`
+      const token = localStorage.getItem('authToken')
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          fileName: parsed.fileName,
+          transactions: parsed.items,
+        }),
+      })
+      if (!res.ok) {
+        const text = await res.text().catch(() => null)
+        throw new Error(text || `Server returned ${res.status}`)
+      }
       const next = await saveImport({
         fileName: parsed.fileName,
         label: monthLabel(parsed.summary.dateTo),
@@ -167,6 +209,7 @@ export default function Import() {
       setHistory(next)
       showToast(`Uvoženih ${parsed.summary.fresh} transakcij`)
       setParsed(null)
+      setHistoryKey((k) => k + 1)
     } catch {
       showToast('Uvoz ni uspel', 'bad')
     } finally {
@@ -371,19 +414,26 @@ export default function Import() {
           <div className="card">
             <h3 style={{ margin: '0 0 14px', fontSize: 15, fontWeight: 600 }}>Recent imports</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {history.length === 0 && (
-                <div style={{ fontSize: 13, color: 'var(--text-3)' }}>No imports yet.</div>
-              )}
-              {history.map((h) => (
-                <div key={h.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', border: '1px solid var(--line-2)', borderRadius: 9, background: 'var(--surface-2)' }}>
-                  <Ic name="file" size={16} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div className="mono" style={{ fontSize: 12, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{h.fileName}</div>
-                    <div style={{ fontSize: 11, color: 'var(--text-3)' }}>{h.label} · {h.rows} rows</div>
-                  </div>
-                  <span className="chip good">Done</span>
+              {history.length === 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '24px 0', gap: 8 }}>
+                  <Ic name="file" size={28} />
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-2)' }}>No imports yet</div>
+                  <div style={{ fontSize: 12, color: 'var(--text-3)', textAlign: 'center' }}>Upload a CSV file to get started</div>
                 </div>
-              ))}
+              ) : (
+                history.map((h) => (
+                  <div key={h.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', border: '1px solid var(--line-2)', borderRadius: 9, background: 'var(--surface-2)' }}>
+                    <Ic name="file" size={16} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div className="mono" style={{ fontSize: 12, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{h.fileName}</div>
+                      <div style={{ fontSize: 11, color: 'var(--text-3)' }}>{h.date} · {h.rows} uvoženih{h.failed > 0 ? ` · ${h.failed} napak` : ''}</div>
+                    </div>
+                    <span className={`chip ${h.status === 'completed' ? 'good' : h.status === 'partial' ? 'warn' : 'good'}`}>
+                      {h.status === 'completed' ? 'Done' : h.status === 'partial' ? 'Partial' : 'Done'}
+                    </span>
+                  </div>
+                ))
+              )}
             </div>
           </div>
 
