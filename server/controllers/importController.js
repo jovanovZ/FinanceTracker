@@ -6,20 +6,52 @@ import ImportHistory from '../models/ImportHistory.js';
 
 const { transactionModel: Transaction } = TransactionExports;
 
-const importCSV = async (req, res) => {
+export const getImportHistory = async (req, res) => {
+  try {
+    const records = await ImportHistory.find({ user: req.user._id })
+      .sort({ createdAt: -1 })
+      .limit(10)
+      .select('fileName importedRecords failedRecords status dateRange createdAt');
+
+    return res.status(200).json({ success: true, history: records });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+export const parseCSV = async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ success: false, message: 'No file uploaded' });
   }
 
   try {
-    var { transactions, errors } = await parseCSVBuffer(req.file.buffer);
+    let { transactions, errors } = await parseCSVBuffer(req.file.buffer);
     transactions = await categorize(transactions);
 
+    return res.status(200).json({
+      success: true,
+      parseErrors: errors,
+      transactions,
+    });
+  } catch (err) {
+    return res.status(422).json({ success: false, message: err.message });
+  }
+};
+
+export const confirmImport = async (req, res) => {
+  const { transactions, fileName } = req.body;
+
+  if (!transactions || !Array.isArray(transactions) || transactions.length === 0) {
+    return res.status(400).json({ success: false, message: 'No transactions to save' });
+  }
+
+  try {
     const importBatchId = randomUUID();
     const userId = req.user._id;
 
-    const toSave = transactions.map(({ type, ...t }) => ({
+    const toSave = transactions.map(({ type, duplicate, id, amountRaw, category, ...t }) => ({
       ...t,
+      cat: category ?? t.cat ?? '',
       user: userId,
       importBatchId,
     }));
@@ -41,16 +73,16 @@ const importCSV = async (req, res) => {
       }
     }
 
-    const dates = toSave.map(t => t.date);
-    const dateRange = {
+    const dates = toSave.map(t => new Date(t.date)).filter(d => !isNaN(d));
+    const dateRange = dates.length ? {
       from: new Date(Math.min(...dates)),
       to: new Date(Math.max(...dates)),
-    };
+    } : {};
 
     await ImportHistory.create({
       user: userId,
       importBatchId,
-      fileName: req.file.originalname,
+      fileName: fileName ?? 'unknown.csv',
       source: 'csv',
       status: failedCount > 0 ? 'partial' : 'completed',
       importedRecords: savedCount,
@@ -65,12 +97,8 @@ const importCSV = async (req, res) => {
       importBatchId,
       imported: savedCount,
       failed: failedCount,
-      parseErrors: errors,
-      transactions,
     });
   } catch (err) {
     return res.status(422).json({ success: false, message: err.message });
   }
 };
-
-export default importCSV;
