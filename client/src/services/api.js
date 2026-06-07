@@ -74,6 +74,14 @@ class ApiClient {
     });
   }
 
+  patch(endpoint, body, options = {}) {
+  return this.request(endpoint, {
+    ...options,
+    method: 'PATCH',
+    body: JSON.stringify(body),
+  })
+}
+
   put(endpoint, body, options = {}) {
     return this.request(endpoint, {
       ...options,

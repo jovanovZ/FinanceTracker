@@ -308,12 +308,12 @@ export default function Dashboard() {
   useEffect(() => {
     let cancelled = false
     Promise.all([
-      getDashboardStats(),
-      getCashFlow(),
-      getSpendingByCategory(),
-      getBudgets(),
-      getRecentTransactions(),
-      getInsights(),
+      getDashboardStats().catch(() => ({ stats: null, sparklines: null })),
+      getCashFlow().catch(() => []),
+      getSpendingByCategory().catch(() => []),
+      getBudgets().catch(() => []),
+      getRecentTransactions().catch(() => []),
+      getInsights().catch(() => []),
     ]).then(([dash, cf, cats, bud, txs, ins]) => {
       if (cancelled) return
       setStats(dash.stats)
@@ -328,13 +328,8 @@ export default function Dashboard() {
     return () => { cancelled = true }
   }, [])
 
-  if (loading) {
-    return (
-      <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--text-3)' }}>
-        Loading dashboard…
-      </div>
-    )
-  }
+  if (loading) { return <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--text-3)' }}>Loading dashboard…</div> }
+  if (!stats)  { return <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--text-3)' }}>No data yet — add your first transaction to get started.</div> }
 
   const totalSpent = categories.reduce((s, c) => s + c.amount, 0)
   const topCategories = categories.slice(0, 5)

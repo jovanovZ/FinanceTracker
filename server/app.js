@@ -49,7 +49,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/', IndexRouter);
 app.use('/auth', AuthRouter);
 app.use('/category', CategoryRouter);
-app.use('/transaction', TransactionRouter);
+app.use('/transactions', TransactionRouter);
 app.use('/import', ImportRouter);
 // app.use("/goals", GoalsRouter);
 app.use("/budgets", BudgetRouter);

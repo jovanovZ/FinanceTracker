@@ -1,12 +1,38 @@
 import { useState } from 'react'
 import { CATEGORIES, ACCOUNTS } from '../services/transactionService.js'
 
-export function AddTransactionModal({ onClose, onSuccess }) {
-  const [form, setForm] = useState({
-    merchant: '', sub: '', category: 'Groceries',
-    account: 'NLB Checking', date: 'Apr 18', amount: '',
-    type: 'expense', recurring: false,
+export function AddTransactionModal({ onClose, onSuccess, initialData = null }) {
+  const isEditMode = initialData !== null
+  const today = new Date().toISOString().split('T')[0]
+
+  function parseInitialDate(dateStr) {
+    if (!dateStr) return today
+    // If it's already YYYY-MM-DD, use it directly
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr
+    // Otherwise it's formatted like "7 Jun" — can't recover the year reliably, use today
+    return today
+  }
+
+  const [form, setForm] = useState(() => {
+    if (!isEditMode) {
+      return {
+        merchant: '', sub: '', category: 'Groceries',
+        account: 'NLB Checking', date: today, amount: '',
+        type: 'expense', recurring: false,
+      }
+    }
+    return {
+      merchant:  initialData.merchant  || '',
+      sub:       initialData.sub       || '',
+      category:  initialData.category  || 'Groceries',
+      account:   initialData.account   || 'NLB Checking',
+      date:      parseInitialDate(initialData.rawDate || initialData.date),
+      amount:    String(Math.abs(initialData.amount || 0)),
+      type:      (initialData.amount || 0) >= 0 ? 'income' : 'expense',
+      recurring: initialData.recurring || false,
+    }
   })
+
   const [errors, setErrors] = useState({})
   const [saving, setSaving] = useState(false)
 
@@ -19,7 +45,7 @@ export function AddTransactionModal({ onClose, onSuccess }) {
     const e = {}
     if (!form.merchant.trim()) e.merchant = 'Required'
     if (!form.amount || isNaN(parseFloat(form.amount))) e.amount = 'Enter a valid number'
-    if (!form.date.trim()) e.date = 'Required'
+    if (!form.date) e.date = 'Required'
     return e
   }
 
@@ -40,8 +66,12 @@ export function AddTransactionModal({ onClose, onSuccess }) {
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <form className="modal wide" onClick={e => e.stopPropagation()} onSubmit={submit} noValidate>
-        <h3>Add transaction</h3>
-        <p className="modal-sub">Manually record a transaction to your account.</p>
+        <h3>{isEditMode ? 'Edit transaction' : 'Add transaction'}</h3>
+        <p className="modal-sub">
+          {isEditMode
+            ? 'Update the details of this transaction.'
+            : 'Manually record a transaction to your account.'}
+        </p>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
           {/* Type toggle */}
@@ -88,7 +118,13 @@ export function AddTransactionModal({ onClose, onSuccess }) {
 
           <label className="field">
             <span className="field-label">Date</span>
-            <input className="input" value={form.date} onChange={e => setField('date', e.target.value)} aria-invalid={!!errors.date} placeholder="Apr 18" />
+            <input
+              className="input"
+              type="date"
+              value={form.date}
+              onChange={e => setField('date', e.target.value)}
+              aria-invalid={!!errors.date}
+            />
             {errors.date && <span className="field-error">{errors.date}</span>}
           </label>
 
@@ -123,7 +159,7 @@ export function AddTransactionModal({ onClose, onSuccess }) {
         <div className="modal-actions" style={{ height: '44px', display: 'inline-flex', gap: 20 }}>
           <button type="button" className="btn btn-ghost btn-sm" onClick={onClose} disabled={saving}>Cancel</button>
           <button type="submit" className="btn btn-primary btn-sm" disabled={saving}>
-            {saving ? 'Adding…' : 'Add transaction'}
+            {saving ? (isEditMode ? 'Saving…' : 'Adding…') : (isEditMode ? 'Save changes' : 'Add transaction')}
           </button>
         </div>
       </form>

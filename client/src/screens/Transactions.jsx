@@ -1,21 +1,22 @@
 // Transactions.jsx
-// mockup data
 
 import { useEffect, useState, useRef, useCallback } from 'react'
 import {
   getTransactions,
   deleteTransaction,
   deleteTransactions,
+  updateTransaction,
   CATEGORIES,
   ACCOUNTS,
 } from '../services/transactionService.js'
 import { useTransactionModal } from '../context/TransactionsModalContext.jsx'
+import { AddTransactionModal } from '../components/AddTransactionModal.jsx'
 
 const TRANSACTION_TYPES = [
-  { value: '',         label: 'All types'  },
-  { value: 'income',   label: 'Income'     },
-  { value: 'expense',  label: 'Expenses'   },
-  { value: 'recurring',label: 'Recurring'  },
+  { value: '',          label: 'All types'  },
+  { value: 'income',    label: 'Income'     },
+  { value: 'expense',   label: 'Expenses'   },
+  { value: 'recurring', label: 'Recurring'  },
 ]
 
 function fmt(n) {
@@ -29,23 +30,27 @@ function fmtSigned(n) {
   return s
 }
 
+function currentMonthLabel() {
+  return new Date().toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
+}
+
 function Ic({ name, size = 16 }) {
   const s   = { width: size, height: size }
   const str = { fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' }
   switch (name) {
-    case 'search':   return <svg style={s} viewBox="0 0 24 24" {...str}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-    case 'calendar': return <svg style={s} viewBox="0 0 24 24" {...str}><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-    case 'download': return <svg style={s} viewBox="0 0 24 24" {...str}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-    case 'upload':   return <svg style={s} viewBox="0 0 24 24" {...str}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-    case 'plus':     return <svg style={s} viewBox="0 0 24 24" {...str}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-    case 'filter':   return <svg style={s} viewBox="0 0 24 24" {...str}><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+    case 'search':       return <svg style={s} viewBox="0 0 24 24" {...str}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    case 'calendar':     return <svg style={s} viewBox="0 0 24 24" {...str}><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    case 'download':     return <svg style={s} viewBox="0 0 24 24" {...str}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    case 'upload':       return <svg style={s} viewBox="0 0 24 24" {...str}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+    case 'plus':         return <svg style={s} viewBox="0 0 24 24" {...str}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    case 'filter':       return <svg style={s} viewBox="0 0 24 24" {...str}><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
     case 'chevron-down': return <svg style={s} viewBox="0 0 24 24" {...str}><polyline points="6 9 12 15 18 9"/></svg>
-    case 'dots':     return <svg style={s} viewBox="0 0 24 24" {...str}><circle cx="12" cy="5" r="1" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="12" cy="19" r="1" fill="currentColor" stroke="none"/></svg>
-    case 'trash':    return <svg style={s} viewBox="0 0 24 24" {...str}><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
-    case 'edit':     return <svg style={s} viewBox="0 0 24 24" {...str}><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-    case 'repeat':   return <svg style={s} viewBox="0 0 24 24" {...str}><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
-    case 'x':        return <svg style={s} viewBox="0 0 24 24" {...str}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-    case 'sort':     return <svg style={s} viewBox="0 0 24 24" {...str}><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+    case 'dots':         return <svg style={s} viewBox="0 0 24 24" {...str}><circle cx="12" cy="5" r="1" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="12" cy="19" r="1" fill="currentColor" stroke="none"/></svg>
+    case 'trash':        return <svg style={s} viewBox="0 0 24 24" {...str}><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+    case 'edit':         return <svg style={s} viewBox="0 0 24 24" {...str}><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+    case 'repeat':       return <svg style={s} viewBox="0 0 24 24" {...str}><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+    case 'x':            return <svg style={s} viewBox="0 0 24 24" {...str}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    case 'sort':         return <svg style={s} viewBox="0 0 24 24" {...str}><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
     default: return null
   }
 }
@@ -115,7 +120,7 @@ function FilterPill({ label, value, options, onChange, icon }) {
   )
 }
 
-function RowMenu({ tx, onDelete }) {
+function RowMenu({ tx, onDelete, onEdit }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
 
@@ -147,7 +152,7 @@ function RowMenu({ tx, onDelete }) {
         }}>
           <button
             type="button"
-            onClick={() => { setOpen(false) }}
+            onClick={() => { setOpen(false); onEdit(tx) }}
             style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 14px', fontSize: 13, border: 'none', background: 'transparent', color: 'var(--text-1)', cursor: 'pointer' }}
           >
             <Ic name="edit" size={14} /> Edit
@@ -178,20 +183,23 @@ function SummaryCard({ label, value, sub, color }) {
 }
 
 export default function Transactions() {
-  const [page,     setPage]     = useState(1)
-  const [search,   setSearch]   = useState('')
-  const [category, setCategory] = useState('')
-  const [account,  setAccount]  = useState('')
-  const [type,     setType]     = useState('')
-  const [items,    setItems]    = useState([])
-  const [total,    setTotal]    = useState(0)
-  const [pages,    setPages]    = useState(1)
-  const [summary,  setSummary]  = useState(null)
-  const [loading,  setLoading]  = useState(true)
-  const [selected, setSelected] = useState(new Set())
-  const [toast,    setToast]    = useState(null)
-  const { openAddTransaction, refreshKey } = useTransactionModal()
+  const [page,       setPage]       = useState(1)
+  const [search,     setSearch]     = useState('')
+  const [category,   setCategory]   = useState('')
+  const [account,    setAccount]    = useState('')
+  const [type,       setType]       = useState('')
+  const [amountSort, setAmountSort] = useState('')
+  const [items,      setItems]      = useState([])
+  const [total,      setTotal]      = useState(0)
+  const [pages,      setPages]      = useState(1)
+  const [summary,    setSummary]    = useState(null)
+  const [loading,    setLoading]    = useState(true)
+  const [selected,   setSelected]   = useState(new Set())
+  const [toast,      setToast]      = useState(null)
+  // Edit modal state — null means closed, otherwise holds the tx being edited
+  const [editingTx,  setEditingTx]  = useState(null)
 
+  const { openAddTransaction, refreshKey } = useTransactionModal()
   const searchTimer = useRef(null)
 
   function showToast(text, tone = 'good') {
@@ -202,7 +210,7 @@ export default function Transactions() {
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await getTransactions({ page, search, category, account, type, refreshKey })
+      const res = await getTransactions({ page, search, category, account, type, amountSort, refreshKey })
       setItems(res.items)
       setTotal(res.total)
       setPages(res.pages)
@@ -211,7 +219,7 @@ export default function Transactions() {
     } finally {
       setLoading(false)
     }
-  }, [page, search, category, account, type, refreshKey])
+  }, [page, search, category, account, type, amountSort, refreshKey])
 
   useEffect(() => { load() }, [load])
 
@@ -229,7 +237,6 @@ export default function Transactions() {
     if (key === 'type')     setType(val)
     setPage(1)
   }
-
 
   const allChecked = items.length > 0 && items.every(tx => selected.has(tx.id))
   function toggleAll() {
@@ -260,6 +267,26 @@ export default function Transactions() {
     load()
   }
 
+  // Called by the edit modal on submit
+  async function handleEditSave(formData) {
+    try {
+      await updateTransaction(editingTx.id, {
+        category:  formData.category,
+        desc:      formData.sub,
+        merchant:  formData.merchant,
+        amount:    formData.amount,
+        date:      formData.date,
+        account:   formData.account,
+        recurring: formData.recurring,
+      })
+      setEditingTx(null)
+      showToast('Transaction updated')
+      load()
+    } catch {
+      showToast('Failed to update transaction', 'bad')
+    }
+  }
+
   const categoryOptions = [
     { value: '', label: 'All categories' },
     ...CATEGORIES.map(c => ({ value: c, label: c }))
@@ -271,12 +298,21 @@ export default function Transactions() {
 
   return (
     <div>
+      {/* Edit modal — rendered here at the top level so it's never inside overflow:hidden */}
+      {editingTx && (
+        <AddTransactionModal
+          initialData={editingTx}
+          onClose={() => setEditingTx(null)}
+          onSuccess={handleEditSave}
+        />
+      )}
+
       {/* Page head */}
       <div className="page-head" style={{ marginBottom: 20 }}>
         <div>
           <h1 className="page-title">Transactions</h1>
           <p className="page-sub">
-            {total} transaction{total !== 1 ? 's' : ''} · {summary ? `${summary.incomeCount + summary.spendCount} shown` : ''} · April 2026
+            {total} transaction{total !== 1 ? 's' : ''} · {currentMonthLabel()}
           </p>
         </div>
         <div style={{ height: '40px', display: 'inline-flex', gap: 20 }}>
@@ -313,7 +349,7 @@ export default function Transactions() {
           <SummaryCard
             label="Net change"
             value={fmtSigned(summary.netChange)}
-            sub={`From ${total} shown`}
+            sub={`From ${total} transaction${total !== 1 ? 's' : ''}`}
             color={summary.netChange >= 0 ? 'var(--accent)' : '#ef4444'}
           />
         </div>
@@ -322,7 +358,6 @@ export default function Transactions() {
       {/* Filter bar */}
       <div className="card" style={{ padding: '12px 16px', marginBottom: 12 }}>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-          {/* Search */}
           <div style={{
             display: 'flex', alignItems: 'center', gap: 8,
             padding: '6px 12px', flex: '1 1 220px', minWidth: 180,
@@ -340,7 +375,6 @@ export default function Transactions() {
             />
           </div>
 
-          {/* Date pill - styled active */}
           <button
             type="button"
             style={{
@@ -352,7 +386,7 @@ export default function Transactions() {
             }}
           >
             <Ic name="calendar" size={13} />
-            April 2026
+            {currentMonthLabel()}
           </button>
 
           <FilterPill
@@ -375,13 +409,13 @@ export default function Transactions() {
           />
           <FilterPill
             label="Amount"
-            value=""
+            value={amountSort}
             options={[
-              { value: '', label: 'Amount' },
-              { value: 'asc', label: 'Low → High' },
+              { value: '',     label: 'Amount'     },
+              { value: 'asc',  label: 'Low → High' },
               { value: 'desc', label: 'High → Low' },
             ]}
-            onChange={() => {}}
+            onChange={v => { setAmountSort(v); setPage(1) }}
           />
 
           <div style={{ marginLeft: 'auto' }}>
@@ -433,7 +467,7 @@ export default function Transactions() {
       )}
 
       {/* Table */}
-      <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+      <div className="card" style={{ padding: 0, overflow: 'visible' }}>
         {loading ? (
           <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--text-3)', fontSize: 13 }}>
             Loading transactions…
@@ -446,7 +480,6 @@ export default function Transactions() {
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--line)' }}>
-                {/* Checkbox column */}
                 <th style={{ padding: '12px 0 12px 16px', width: 36 }}>
                   <input
                     type="checkbox"
@@ -486,6 +519,7 @@ export default function Transactions() {
                   selected={selected.has(tx.id)}
                   onToggle={() => toggleOne(tx.id)}
                   onDelete={handleDelete}
+                  onEdit={setEditingTx}
                 />
               ))}
             </tbody>
@@ -556,7 +590,7 @@ export default function Transactions() {
   )
 }
 
-function TxRow({ tx, selected, onToggle, onDelete }) {
+function TxRow({ tx, selected, onToggle, onDelete, onEdit }) {
   const isIncome = tx.amount > 0
 
   return (
@@ -641,7 +675,7 @@ function TxRow({ tx, selected, onToggle, onDelete }) {
 
       {/* Row menu */}
       <td style={{ padding: '12px 12px 12px 0', textAlign: 'right' }}>
-        <RowMenu tx={tx} onDelete={onDelete} />
+        <RowMenu tx={tx} onDelete={onDelete} onEdit={onEdit} />
       </td>
     </tr>
   )

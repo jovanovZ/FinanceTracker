@@ -1,20 +1,13 @@
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from './hooks/useAuth'
 import { useTheme } from './hooks/useTheme'
 import { TransactionModalProvider } from './context/TransactionsModalContext.jsx'
 import { addTransaction } from './services/transactionService.js'
+import apiClient from './services/api.js'
 
-const NAV_MAIN = [
-  { id: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
-  { id: 'transactions', label: 'Transactions', icon: 'list', count: 142 },
-  { id: 'import', label: 'Import', icon: 'upload' },
-  { id: 'budgets', label: 'Budgets', icon: 'target' },
-  { id: 'analytics', label: 'Analytics', icon: 'chart' },
-  { id: 'categories', label: 'Categories', icon: 'tag' },
-]
 const NAV_BOTTOM = [
-  { id: 'profile', label: 'Profile', icon: 'user' },
+  { id: 'profile',  label: 'Profile',  icon: 'user'     },
   { id: 'settings', label: 'Settings', icon: 'settings' },
 ]
 
@@ -53,14 +46,23 @@ function Ic({ name, size = 17 }) {
   }
 }
 
-function Sidebar({ active }) {
-  const navigate = useNavigate();
-  const { logout, user } = useAuth();
+function Sidebar({ active, txCount, onTxCountChange }) {
+  const navigate = useNavigate()
+  const { logout, user } = useAuth()
 
   const handleLogout = async () => {
-    await logout();
-    navigate('/login');
-  };
+    await logout()
+    navigate('/login')
+  }
+
+  const NAV_MAIN = [
+    { id: 'dashboard',    label: 'Dashboard',    icon: 'dashboard' },
+    { id: 'transactions', label: 'Transactions', icon: 'list',   count: txCount },
+    { id: 'import',       label: 'Import',       icon: 'upload'   },
+    { id: 'budgets',      label: 'Budgets',      icon: 'target'   },
+    { id: 'analytics',    label: 'Analytics',    icon: 'chart'    },
+    { id: 'categories',   label: 'Categories',   icon: 'tag'      },
+  ]
 
   return (
     <aside className="sidebar">
@@ -72,32 +74,34 @@ function Sidebar({ active }) {
       <div className="sidebar-section-label">Workspace</div>
       <div className="sidebar-nav">
         {NAV_MAIN.map((n) => (
-      <button
-        key={n.id}
-        type="button"
-        className={`sidebar-item ${active === n.id ? 'active' : ''}`}
-        onClick={() => navigate(`/${n.id}`)}
-      >
+          <button
+            key={n.id}
+            type="button"
+            className={`sidebar-item ${active === n.id ? 'active' : ''}`}
+            onClick={() => navigate(`/${n.id}`)}
+          >
             <Ic name={n.icon} />
             <span>{n.label}</span>
-            {n.count && <span className="count">{n.count}</span>}
+            {n.count != null && n.count > 0 && (
+              <span className="count">{n.count}</span>
+            )}
           </button>
         ))}
       </div>
 
       <div className="sidebar-section-label">Account</div>
       <div className="sidebar-nav">
-      {NAV_BOTTOM.map((n) => (
-        <button
-          key={n.id}
-          type="button"
-          className={`sidebar-item ${active === n.id ? 'active' : ''}`}
-          onClick={() => navigate(`/${n.id}`)}
-        >
-          <Ic name={n.icon} />
-          <span>{n.label}</span>
-        </button>
-      ))}
+        {NAV_BOTTOM.map((n) => (
+          <button
+            key={n.id}
+            type="button"
+            className={`sidebar-item ${active === n.id ? 'active' : ''}`}
+            onClick={() => navigate(`/${n.id}`)}
+          >
+            <Ic name={n.icon} />
+            <span>{n.label}</span>
+          </button>
+        ))}
       </div>
 
       <div className="sidebar-footer">
@@ -109,22 +113,18 @@ function Sidebar({ active }) {
       </div>
 
       <div className="sidebar-user">
-        <div className="sidebar-user-avatar">{user?.name?.[0]?.toUpperCase() || 'LK'}</div>
+        <div className="sidebar-user-avatar">{user?.name?.[0]?.toUpperCase() || '?'}</div>
         <div style={{ lineHeight: 1.25, flex: 1 }}>
-          <div className="sidebar-user-name">{user?.name || 'Lara Kovač'}</div>
-          <div className="sidebar-user-email">{user?.email || 'lara@example.com'}</div>
+          <div className="sidebar-user-name">{user?.name || ''}</div>
+          <div className="sidebar-user-email">{user?.email || ''}</div>
         </div>
-        <button 
-          type="button" 
+        <button
+          type="button"
           onClick={handleLogout}
           style={{
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            padding: '4px 8px',
-            fontSize: '12px',
-            color: 'var(--text-secondary)',
-            opacity: 0.7,
+            background: 'none', border: 'none', cursor: 'pointer',
+            padding: '4px 8px', fontSize: '12px',
+            color: 'var(--text-secondary)', opacity: 0.7,
           }}
           title="Logout"
         >
@@ -181,17 +181,37 @@ export default function AppShell() {
   const { pathname } = useLocation()
   const active = pathname.slice(1)
 
+  // Live transaction count for the sidebar badge
+  const [txCount, setTxCount] = useState(null)
+
+  useEffect(() => {
+    apiClient.get('/transactions')
+      .then(data => setTxCount(Array.isArray(data) ? data.length : null))
+      .catch(() => setTxCount(null))
+  }, [])
+
+  // Called by the modal after a successful add or delete so the badge stays in sync
+  function adjustTxCount(delta) {
+    setTxCount(prev => prev == null ? null : prev + delta)
+  }
+
+  async function handleAddTransaction(data) {
+    const result = await addTransaction(data)
+    adjustTxCount(+1)
+    return result
+  }
+
   return (
-  <TransactionModalProvider onSuccess={(data) => addTransaction(data)}>
-    <div className="app">
-      <Sidebar active={active} />
-      <div className="main">
-        <Topbar theme={theme} toggleTheme={toggleTheme} />
-        <div className="content">
-          <Outlet />
+    <TransactionModalProvider onSuccess={handleAddTransaction}>
+      <div className="app">
+        <Sidebar active={active} txCount={txCount} />
+        <div className="main">
+          <Topbar theme={theme} toggleTheme={toggleTheme} />
+          <div className="content">
+            <Outlet />
+          </div>
         </div>
       </div>
-    </div>
     </TransactionModalProvider>
   )
 }

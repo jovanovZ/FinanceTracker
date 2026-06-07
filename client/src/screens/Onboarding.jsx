@@ -261,14 +261,14 @@ const Onboarding = () => {
     if (isLast) {
       // TODO: ko bo backend nared — tukaj pošljemo podatke:
       // await onboardingService.save({ persona, goals, currency, monthlyBudget });
-      navigate('/profile'); // mora iti na dashboard
+      navigate('/dashboard') 
     } else {
       setStep(s => s + 1);
     }
   };
 
   const handleBack = () => setStep(s => Math.max(0, s - 1));
-  const handleSkip = () => navigate('/profile'); // // mora iti na dashboard
+  const handleSkip = () => navigate('/dashboard');
 
   return (
     <div className="onboarding">
