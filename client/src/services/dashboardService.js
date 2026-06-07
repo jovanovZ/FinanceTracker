@@ -125,7 +125,7 @@ export async function getBudgets() {
 // GET /transaction  (last 10, most recent)
 // Returns transaction array shaped for TxRow
 export async function getRecentTransactions() {
-  const txs = await apiClient.get('/transaction?limit=10')
+  const txs = await apiClient.get('/transactions?limit=10')
 
   return (Array.isArray(txs) ? txs : []).slice(0, 10).map(tx => {
     const merchant = tx.merchant || tx.desc || 'Unknown'

@@ -87,11 +87,17 @@ export const updateTransaction = async (req, res, next) => {
         
         const userId = req.user._id; 
 
-        const { cat, desc } = req.body;
+        const { cat, desc, merchant, amount, date, account, isSub, currency } = req.body;
 
         const updateFields = {};
-        if (cat !== undefined) updateFields.cat = cat;
-        if (desc !== undefined) updateFields.desc = desc;
+        if (cat      !== undefined) updateFields.cat      = cat;
+        if (desc     !== undefined) updateFields.desc     = desc;
+        if (merchant !== undefined) updateFields.merchant = merchant;
+        if (amount   !== undefined) updateFields.amount   = amount;
+        if (date     !== undefined) updateFields.date     = date;
+        if (account  !== undefined) updateFields.account  = account;
+        if (isSub    !== undefined) updateFields.isSub    = isSub;
+        if (currency !== undefined) updateFields.currency = currency;
 
         // Ker se išče glede na userId en uporabnik ne more spreminjati drugemu
         const updatedTransaction = await Transaction.findOneAndUpdate(
