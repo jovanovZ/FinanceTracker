@@ -17,6 +17,7 @@ import ImportRouter from './routes/import.routes.js';
 import { connectDB } from './config/db.js';
 import BudgetRouter from "./routes/budgetRoutes.js";
 import StatementsRouter from "./routes/statements.routes.js";   
+import AnalyticsRouter from './routes/analytics.routes.js';
 
 dotenv.config();
 connectDB();
@@ -53,6 +54,7 @@ app.use('/import', ImportRouter);
 // app.use("/goals", GoalsRouter);
 app.use("/budgets", BudgetRouter);
 app.use("/statements", StatementsRouter);
+app.use('/analytics', AnalyticsRouter)
 // 404 handler
 app.use(function(req, res, next) {
   res.status(404).json({

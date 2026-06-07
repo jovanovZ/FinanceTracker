@@ -1,8 +1,9 @@
-import Transaction from '../models/Transaction.js';
+import TransactionData from '../models/Transaction.js';
+const Transaction = TransactionData.transactionModel;
 
 // Vrne vse transakcije glede na filtre
 // GET /transactions
-export const getTransactions = async (req, res) => {
+export const getTransactions = async (req, res, next) => {
     try {
         
         const userId = req.user._id; 
@@ -49,7 +50,7 @@ export const getTransactions = async (req, res) => {
 
 // Ustvari novi transaction
 // POST /transactions
-export const createTransaction = async (req, res) => {
+export const createTransaction = async (req, res, next) => {
     try {
         
         const userId = req.user._id; 
@@ -80,7 +81,7 @@ export const createTransaction = async (req, res) => {
 
 // Posodobi obstoječo transakcijo
 // PATCH /transactions/:id
-export const updateTransaction = async (req, res) => {
+export const updateTransaction = async (req, res, next) => {
     try {
         const { id } = req.params;
         
@@ -112,7 +113,7 @@ export const updateTransaction = async (req, res) => {
 
 // Brisanje transakcije
 // DELETE /transactions/:id
-export const deleteTransaction = async (req, res) => {
+export const deleteTransaction = async (req, res, next) => {
     try {
         const { id } = req.params;
         
