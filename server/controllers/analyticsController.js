@@ -1,4 +1,5 @@
-import Transaction from '../models/Transaction.js';
+import TransactionData from '../models/Transaction.js';
+const Transaction = TransactionData.transactionModel;
 import mongoose from 'mongoose';
 
 // Agregacije za dashboard (prihodki, odhodki, prihranek)
@@ -8,7 +9,7 @@ export const getDashboardStats = async (req, res, next) => {
         const userId = req.user._id;
 
         const stats = await Transaction.aggregate([
-            { $match: { user: new mongoose.Types.ObjectId(userId) } },
+            { $match: { user: userId } },
             {
                 $group: {
                     _id: null,
@@ -45,7 +46,7 @@ export const getMonthlyTrends = async (req, res, next) => {
         const userId = req.user._id;
 
         const trends = await Transaction.aggregate([
-            { $match: { user: new mongoose.Types.ObjectId(userId) } },
+            { $match: { user: userId } },
             {
                 $group: {
                     _id: {
@@ -89,7 +90,7 @@ export const getTopMerchants = async (req, res, next) => {
            
             { 
                 $match: { 
-                    user: new mongoose.Types.ObjectId(userId), 
+                    user: userId, 
                     amount: { $lt: 0 } 
                 } 
             },
@@ -127,7 +128,7 @@ export const getDailySpending = async (req, res, next) => {
         const dailySpending = await Transaction.aggregate([
             { 
                 $match: { 
-                    user: new mongoose.Types.ObjectId(userId), 
+                    user: userId, 
                     amount: { $lt: 0 } 
                 } 
             },
@@ -158,7 +159,7 @@ export const getDailySpending = async (req, res, next) => {
 export const getInsights = async (req, res, next) => {
     try {
         const userId = req.user._id;
-        const userObjectId = new mongoose.Types.ObjectId(userId);
+        const userObjectId = userId;
 
         const [peakDayData, topCategoryData, subscriptionData] = await Promise.all([
             Transaction.aggregate([
