@@ -9,6 +9,7 @@ import {
   getRecentTransactions,
   getInsights,
 } from '../services/dashboardService.js'
+import { getGoals, createGoal, updateGoal, deleteGoal } from '../services/goalService.js'
 import { useTransactionModal } from '../context/TransactionsModalContext.jsx'
 import { useAuth } from '../hooks/useAuth.js'
 
@@ -330,6 +331,240 @@ function GoalsBanner({ goals }) {
   )
 }
 
+// ---------------------------------------------------------------------------
+// Savings goals — wired to the backend goals feature (GET/POST/DELETE /goals)
+// ---------------------------------------------------------------------------
+function GoalProgress({ goal, fmt, onAddFunds, onDelete }) {
+  const pct = Math.min(goal.progress ?? 0, 100)
+  const done = pct >= 100
+  const barColor = done ? '#16a34a' : 'var(--accent)'
+  const td = goal.targetDate ? new Date(goal.targetDate) : null
+  const dateLabel = td && !isNaN(td) ? td.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }) : null
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+          <span style={{ fontSize: 13, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{goal.name}</span>
+          {dateLabel && <span style={{ fontSize: 11.5, color: 'var(--text-3)', flexShrink: 0 }}>· by {dateLabel}</span>}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+          <span style={{ fontSize: 13, fontWeight: 600 }}>
+            {fmt(goal.currentAmount ?? 0)} <span style={{ fontWeight: 400, color: 'var(--text-3)' }}>/ {fmt(goal.targetAmount ?? 0)}</span>
+          </span>
+          <button
+            type="button"
+            onClick={() => onAddFunds(goal)}
+            title="Add to savings"
+            style={{ background: 'var(--surface-2)', border: '1px solid var(--line)', borderRadius: 7, cursor: 'pointer', color: 'var(--text-2)', fontSize: 11.5, fontWeight: 600, padding: '3px 8px' }}
+          >
+            + Add
+          </button>
+          <button
+            type="button"
+            onClick={() => onDelete(goal)}
+            title="Delete goal"
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-3)', padding: 2, lineHeight: 0, display: 'flex' }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" /><path d="M9 6V4h6v2" /></svg>
+          </button>
+        </div>
+      </div>
+      <div style={{ height: 6, borderRadius: 4, background: 'var(--surface-2)', overflow: 'hidden' }}>
+        <div style={{ height: '100%', borderRadius: 4, width: `${pct}%`, background: barColor, transition: 'width 0.6s ease' }} />
+      </div>
+      <div style={{ fontSize: 11.5, color: 'var(--text-3)' }}>
+        {pct}% saved
+        {goal.remainingAmount > 0 ? ` · ${fmt(goal.remainingAmount)} to go` : ' · target reached'}
+        {goal.monthlyContribution > 0 && !done ? ` · ~${fmt(goal.monthlyContribution)}/mo to stay on track` : ''}
+      </div>
+    </div>
+  )
+}
+
+function NewGoalModal({ onClose, onCreate }) {
+  const [name, setName] = useState('')
+  const [targetAmount, setTargetAmount] = useState('')
+  const [currentAmount, setCurrentAmount] = useState('')
+  const [targetDate, setTargetDate] = useState('')
+  const [saving, setSaving] = useState(false)
+  const valid = name.trim() && Number(targetAmount) > 0 && targetDate
+
+  async function submit(e) {
+    e.preventDefault()
+    if (!valid) return
+    setSaving(true)
+    try {
+      await onCreate({
+        name: name.trim(),
+        targetAmount: Number(targetAmount),
+        currentAmount: Number(currentAmount) || 0,
+        targetDate,
+      })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <form className="modal" onClick={(e) => e.stopPropagation()} onSubmit={submit} noValidate>
+        <h3>New savings goal</h3>
+        <p className="modal-sub">What are you saving for?</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <label className="field">
+            <span className="field-label">Name</span>
+            <input className="input" placeholder="e.g. New laptop" value={name} onChange={(e) => setName(e.target.value)} autoFocus />
+          </label>
+          <div className="grid grid-2" style={{ gap: 12 }}>
+            <label className="field">
+              <span className="field-label">Target amount</span>
+              <input className="input" type="number" step="0.01" min="0" placeholder="1500" value={targetAmount} onChange={(e) => setTargetAmount(e.target.value)} />
+            </label>
+            <label className="field">
+              <span className="field-label">Saved so far</span>
+              <input className="input" type="number" step="0.01" min="0" placeholder="0" value={currentAmount} onChange={(e) => setCurrentAmount(e.target.value)} />
+            </label>
+          </div>
+          <label className="field">
+            <span className="field-label">Target date</span>
+            <input className="input" type="date" value={targetDate} onChange={(e) => setTargetDate(e.target.value)} />
+          </label>
+        </div>
+        <div className="modal-actions">
+          <button type="button" className="btn btn-ghost btn-sm" onClick={onClose} disabled={saving}>Cancel</button>
+          <button type="submit" className="btn btn-primary btn-sm" style={{ width: 'auto', height: 'auto', marginBottom: 0 }} disabled={!valid || saving}>
+            {saving ? 'Creating…' : 'Create goal'}
+          </button>
+        </div>
+      </form>
+    </div>
+  )
+}
+
+function AddFundsModal({ goal, fmt, onClose, onSave }) {
+  const [amount, setAmount] = useState('')
+  const [saving, setSaving] = useState(false)
+  const add = Number(amount) || 0
+  const newTotal = (goal.currentAmount ?? 0) + add
+  const valid = add > 0
+
+  async function submit(e) {
+    e.preventDefault()
+    if (!valid) return
+    setSaving(true)
+    try {
+      await onSave(goal, newTotal)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <form className="modal" onClick={(e) => e.stopPropagation()} onSubmit={submit} noValidate>
+        <h3>Add to "{goal.name}"</h3>
+        <p className="modal-sub">Saved {fmt(goal.currentAmount ?? 0)} of {fmt(goal.targetAmount ?? 0)} so far.</p>
+        <label className="field">
+          <span className="field-label">Amount to add</span>
+          <input className="input" type="number" step="0.01" min="0" placeholder="500" value={amount} onChange={(e) => setAmount(e.target.value)} autoFocus />
+        </label>
+        {add > 0 && (
+          <p style={{ fontSize: 12.5, color: 'var(--text-3)', marginTop: 10 }}>
+            New total: <strong style={{ color: 'var(--text)' }}>{fmt(newTotal)}</strong>
+          </p>
+        )}
+        <div className="modal-actions">
+          <button type="button" className="btn btn-ghost btn-sm" onClick={onClose} disabled={saving}>Cancel</button>
+          <button type="submit" className="btn btn-primary btn-sm" style={{ width: 'auto', height: 'auto', marginBottom: 0 }} disabled={!valid || saving}>
+            {saving ? 'Saving…' : 'Add funds'}
+          </button>
+        </div>
+      </form>
+    </div>
+  )
+}
+
+function GoalsCard({ fmt }) {
+  const [goals, setGoals] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [showModal, setShowModal] = useState(false)
+  const [topUp, setTopUp] = useState(null)
+
+  async function load() {
+    try {
+      const data = await getGoals()
+      setGoals(Array.isArray(data) ? data : [])
+    } catch {
+      setGoals([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => { load() }, [])
+
+  async function handleCreate(payload) {
+    await createGoal(payload)
+    setShowModal(false)
+    load()
+  }
+
+  async function handleAddFunds(goal, newTotal) {
+    await updateGoal(goal._id, { currentAmount: newTotal })
+    setTopUp(null)
+    load()
+  }
+
+  async function handleDelete(goal) {
+    if (!window.confirm(`Delete goal "${goal.name}"?`)) return
+    try {
+      await deleteGoal(goal._id)
+      load()
+    } catch { /* swallow — list reloads on next action */ }
+  }
+
+  return (
+    <div className="card" style={{ marginBottom: 16 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+        <div>
+          <div style={{ fontSize: 15, fontWeight: 600 }}>Savings goals</div>
+          <div style={{ fontSize: 12, color: 'var(--text-3)' }}>
+            {goals.length === 0 ? 'Track progress toward what you are saving for' : `${goals.length} active goal${goals.length === 1 ? '' : 's'}`}
+          </div>
+        </div>
+        <button
+          type="button"
+          className="btn btn-primary btn-sm"
+          style={{ width: 'auto', height: 'auto', marginBottom: 0 }}
+          onClick={() => setShowModal(true)}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 6 }}>
+            <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+          New goal
+        </button>
+      </div>
+
+      {loading ? (
+        <div style={{ padding: '20px 0', textAlign: 'center', color: 'var(--text-3)', fontSize: 13 }}>Loading…</div>
+      ) : goals.length === 0 ? (
+        <div style={{ padding: '28px 0', textAlign: 'center', color: 'var(--text-3)', fontSize: 13 }}>
+          No savings goals yet — click "New goal" to start tracking one.
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 18, marginTop: 16 }}>
+          {goals.map((g) => (
+            <GoalProgress key={g._id} goal={g} fmt={fmt} onAddFunds={setTopUp} onDelete={handleDelete} />
+          ))}
+        </div>
+      )}
+
+      {showModal && <NewGoalModal onClose={() => setShowModal(false)} onCreate={handleCreate} />}
+      {topUp && <AddFundsModal goal={topUp} fmt={fmt} onClose={() => setTopUp(null)} onSave={handleAddFunds} />}
+    </div>
+  )
+}
+
 export default function Dashboard() {
   const [stats, setStats] = useState(null)
   const [sparklines, setSparklines] = useState(null)
@@ -518,6 +753,9 @@ export default function Dashboard() {
           </tbody>
         </table>
       </div>
+
+      {/* Savings goals — wired to the backend goals feature (/goals) */}
+      <GoalsCard fmt={fmt} />
     </div>
   )
 }
