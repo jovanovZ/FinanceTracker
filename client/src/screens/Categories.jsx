@@ -1,22 +1,15 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import categoryService from '../services/categoryService.js'
 
-const CATEGORIES = [
-  { id: 'groceries', name: 'Groceries',        color: 'oklch(0.65 0.14 155)',
-    rules: ['Lidl', 'Mercator', 'Hofer'],        transactions: 14 },
-  { id: 'dining',    name: 'Dining & Cafes',    color: 'oklch(0.70 0.15 50)',
-    rules: ['Čokl', 'Starbucks', 'Pizza'],       transactions: 9 },
-  { id: 'transport', name: 'Transport',         color: 'oklch(0.60 0.14 220)',
-    rules: ['Bolt', 'OMV', 'LPP'],              transactions: 6 },
-  { id: 'housing',   name: 'Housing & Bills',   color: 'oklch(0.55 0.16 300)',
-    rules: ['Elektro', 'Landlord', 'ARSO'],      transactions: 4 },
-  { id: 'subs',      name: 'Subscriptions',     color: 'oklch(0.55 0.18 265)',
-    rules: ['Spotify', 'Netflix', 'T-Mobile'],   transactions: 11 },
-  { id: 'shopping',  name: 'Shopping',          color: 'oklch(0.62 0.15 340)',
-    rules: ['Zara', 'DM', 'IKEA'],              transactions: 7 },
-  { id: 'health',    name: 'Health',            color: 'oklch(0.62 0.14 165)',
-    rules: ['Apotheke', 'Clinic'],               transactions: 3 },
-  { id: 'leisure',   name: 'Leisure',           color: 'oklch(0.70 0.12 85)',
-    rules: ['Kinodvor', 'Steam'],                transactions: 5 },
+const COLOR_OPTIONS = [
+  'oklch(0.65 0.14 155)',
+  'oklch(0.70 0.15 50)',
+  'oklch(0.60 0.14 220)',
+  'oklch(0.55 0.16 300)',
+  'oklch(0.55 0.18 265)',
+  'oklch(0.62 0.15 340)',
+  'oklch(0.62 0.14 165)',
+  'oklch(0.70 0.12 85)',
 ]
 
 function DotsIcon() {
@@ -37,7 +30,10 @@ function PlusIcon({ size = 15 }) {
   )
 }
 
-function CategoryCard({ cat, onAddRule }) {
+function CategoryCard({ cat, onAddRule, onDelete }) {
+  const color = cat.color || COLOR_OPTIONS[0]
+  const rules = cat.keywords || []
+
   return (
     <div className="card" style={{ padding: 20 }}>
       {/* Header */}
@@ -45,11 +41,11 @@ function CategoryCard({ cat, onAddRule }) {
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
           <div style={{
             width: 40, height: 40, borderRadius: 11,
-            background: `color-mix(in oklch, ${cat.color} 20%, transparent)`,
+            background: `color-mix(in oklch, ${color} 20%, transparent)`,
             display: 'grid', placeItems: 'center',
           }}>
             <span style={{
-              background: cat.color,
+              background: color,
               width: 16, height: 16,
               borderRadius: 5,
               display: 'block',
@@ -57,10 +53,17 @@ function CategoryCard({ cat, onAddRule }) {
           </div>
           <div>
             <div style={{ fontSize: 14.5, fontWeight: 600 }}>{cat.name}</div>
-            <div style={{ fontSize: 12, color: 'var(--text-3)' }}>{cat.transactions} transactions this month</div>
+            <div style={{ fontSize: 12, color: 'var(--text-3)' }}>
+              {cat.transactions ?? 0} transactions this month
+            </div>
           </div>
         </div>
-        <button className="icon-btn" style={{ width: 28, height: 28, border: 'none' }}>
+        <button
+          className="icon-btn"
+          style={{ width: 28, height: 28, border: 'none' }}
+          onClick={() => onDelete(cat._id)}
+          title="Delete category"
+        >
           <DotsIcon />
         </button>
       </div>
@@ -73,7 +76,7 @@ function CategoryCard({ cat, onAddRule }) {
         Auto rules
       </div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-        {cat.rules.map(rule => (
+        {rules.map(rule => (
           <span key={rule} style={{
             display: 'inline-flex', alignItems: 'center',
             padding: '3px 9px', borderRadius: 999,
@@ -87,7 +90,7 @@ function CategoryCard({ cat, onAddRule }) {
         ))}
         <button
           type="button"
-          onClick={() => onAddRule(cat.id)}
+          onClick={() => onAddRule(cat._id, rules)}
           style={{
             display: 'inline-flex', alignItems: 'center',
             padding: '3px 9px', borderRadius: 999,
@@ -105,31 +108,65 @@ function CategoryCard({ cat, onAddRule }) {
 }
 
 export default function Categories() {
-  const [categories, setCategories] = useState(CATEGORIES)
+  const [categories, setCategories] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
   const [showNewModal, setShowNewModal] = useState(false)
   const [newName, setNewName] = useState('')
-  const [newColor, setNewColor] = useState('oklch(0.55 0.19 265)')
+  const [newColor, setNewColor] = useState(COLOR_OPTIONS[4])
 
-  function handleAddRule(catId) {
-    const rule = window.prompt('Enter a keyword (e.g. merchant name):')
-    if (!rule?.trim()) return
-    setCategories(prev => prev.map(c =>
-      c.id === catId ? { ...c, rules: [...c.rules, rule.trim()] } : c
-    ))
+  // Naloži kategorije iz backenda ob mountu
+  useEffect(() => {
+    fetchCategories()
+  }, [])
+
+  async function fetchCategories() {
+    try {
+      setLoading(true)
+      const data = await categoryService.getAll()
+      setCategories(data)
+    } catch (err) {
+      setError('Could not load categories.')
+      console.error(err)
+    } finally {
+      setLoading(false)
+    }
   }
 
-  function handleNewCategory() {
+  async function handleAddRule(catId, currentRules) {
+    const rule = window.prompt('Enter a keyword (e.g. merchant name):')
+    if (!rule?.trim()) return
+    const updatedKeywords = [...currentRules, rule.trim()]
+    try {
+      const updated = await categoryService.update(catId, { keywords: updatedKeywords })
+      setCategories(prev => prev.map(c => c._id === catId ? updated : c))
+    } catch (err) {
+      console.error('Failed to add rule:', err)
+    }
+  }
+
+  async function handleDelete(catId) {
+    if (!window.confirm('Delete this category?')) return
+    try {
+      await categoryService.remove(catId)
+      setCategories(prev => prev.filter(c => c._id !== catId))
+    } catch (err) {
+      console.error('Failed to delete category:', err)
+    }
+  }
+
+  async function handleNewCategory() {
     if (!newName.trim()) return
-    const id = newName.toLowerCase().replace(/\s+/g, '-')
-    setCategories(prev => [...prev, {
-      id,
-      name: newName.trim(),
-      color: newColor,
-      rules: [],
-      transactions: 0,
-    }])
-    setNewName('')
-    setShowNewModal(false)
+    try {
+      const created = await categoryService.create({ name: newName.trim(), color: newColor })
+      setCategories(prev => [...prev, created])
+      setNewName('')
+      setNewColor(COLOR_OPTIONS[4])
+      setShowNewModal(false)
+    } catch (err) {
+      console.error('Failed to create category:', err)
+    }
   }
 
   return (
@@ -150,12 +187,26 @@ export default function Categories() {
         </button>
       </div>
 
+      {/* States */}
+      {loading && <p style={{ color: 'var(--text-3)' }}>Loading...</p>}
+      {error && <p style={{ color: 'red' }}>{error}</p>}
+
       {/* Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
-        {categories.map(cat => (
-          <CategoryCard key={cat.id} cat={cat} onAddRule={handleAddRule} />
-        ))}
-      </div>
+      {!loading && !error && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+          {categories.map(cat => (
+            <CategoryCard
+              key={cat._id}
+              cat={cat}
+              onAddRule={handleAddRule}
+              onDelete={handleDelete}
+            />
+          ))}
+          {categories.length === 0 && (
+            <p style={{ color: 'var(--text-3)', gridColumn: '1/-1' }}>No categories yet. Create one!</p>
+          )}
+        </div>
+      )}
 
       {/* New category modal */}
       {showNewModal && (
@@ -172,22 +223,14 @@ export default function Categories() {
                 value={newName}
                 onChange={e => setNewName(e.target.value)}
                 autoFocus
+                onKeyDown={e => e.key === 'Enter' && handleNewCategory()}
               />
             </div>
 
             <div className="field" style={{ marginBottom: 4 }}>
               <label className="field-label">Colour</label>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                {[
-                  'oklch(0.65 0.14 155)',
-                  'oklch(0.70 0.15 50)',
-                  'oklch(0.60 0.14 220)',
-                  'oklch(0.55 0.16 300)',
-                  'oklch(0.55 0.18 265)',
-                  'oklch(0.62 0.15 340)',
-                  'oklch(0.62 0.14 165)',
-                  'oklch(0.70 0.12 85)',
-                ].map(color => (
+                {COLOR_OPTIONS.map(color => (
                   <button
                     key={color}
                     type="button"

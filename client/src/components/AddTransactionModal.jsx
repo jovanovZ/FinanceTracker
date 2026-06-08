@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { CATEGORIES, ACCOUNTS } from '../services/transactionService.js'
+import { useState, useEffect } from 'react'
+import { CATEGORIES, ACCOUNTS, getCategoryNames } from '../services/transactionService.js'
 
 export function AddTransactionModal({ onClose, onSuccess, initialData = null }) {
   const isEditMode = initialData !== null
@@ -35,6 +35,13 @@ export function AddTransactionModal({ onClose, onSuccess, initialData = null }) 
 
   const [errors, setErrors] = useState({})
   const [saving, setSaving] = useState(false)
+  const [category, setCategory] = useState([])
+
+  useEffect(() => {
+    getCategoryNames().then(data=>{setCategory(data);
+      console.log("data", data)
+    })
+  }, []);
 
   function setField(k, v) {
     setForm(f => ({ ...f, [k]: v }))
@@ -131,7 +138,7 @@ export function AddTransactionModal({ onClose, onSuccess, initialData = null }) 
           <label className="field">
             <span className="field-label">Category</span>
             <select className="input" value={form.category} onChange={e => setField('category', e.target.value)}>
-              {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+              {category.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
           </label>
 
