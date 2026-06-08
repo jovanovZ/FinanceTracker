@@ -1,5 +1,6 @@
 import mongoose from 'mongoose'
 import bcrypt from 'bcryptjs'
+
 const userSchema = new mongoose.Schema(
   {
     // Osnovni podatki
@@ -54,9 +55,23 @@ const userSchema = new mongoose.Schema(
       default: 'Beta · Free',
     },
 
+    // Onboarding
     onboardingDone: {
       type: Boolean,
       default: false,
+    },
+    persona: {
+      type: String,
+      enum: ['student', 'employee', 'family', 'freelance'],
+      default: null,
+    },
+    goals: {
+      type: [String],
+      default: [],
+    },
+    monthlyBudget: {
+      type: Number,
+      default: null,
     },
 
     sessions: [
@@ -65,12 +80,12 @@ const userSchema = new mongoose.Schema(
         browser:    { type: String },
         location:   { type: String },
         lastActive: { type: Date, default: Date.now },
-        token:      { type: String }, // JWT token za to sejo
+        token:      { type: String },
       },
     ],
   },
   {
-    timestamps: true, 
+    timestamps: true,
   }
 )
 
@@ -81,8 +96,7 @@ userSchema.pre('save', async function () {
 })
 
 // Metoda za primerjavo gesla
-userSchema.methods.matchPassword = async function (enteredPassword,) {
-  console.log(this.password);
+userSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password)
 }
 

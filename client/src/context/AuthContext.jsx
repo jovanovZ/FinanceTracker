@@ -67,6 +67,12 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
+  // Kliče se po zaključku onboardinga, da preostali del aplikacije
+  // takoj vidi posodobljenega uporabnika (vklj. z onboardingDone: true)
+  const updateUser = (updatedFields) => {
+    setUser(prev => ({ ...prev, ...updatedFields }))
+  }
+
   const value = useMemo(() => ({
     user,
     token,
@@ -75,6 +81,7 @@ export const AuthProvider = ({ children }) => {
     login,
     logout,
     register,
+    updateUser,
   }), [user, token, isAuthenticated, loading])
 
   return (

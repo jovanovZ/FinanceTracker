@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
+import onboardingService from '../services/onboardingService';
 
 function Ic({ name, size = 17 }) {
   const s = { width: size, height: size, flexShrink: 0 };
@@ -19,17 +21,10 @@ function Ic({ name, size = 17 }) {
       return <svg style={s} viewBox="0 0 24 24" {...stroke}><polyline points="20 6 9 17 4 12"/></svg>;
     case 'arrowRight':
       return <svg style={s} viewBox="0 0 24 24" {...stroke}><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>;
-    case 'euro':
-      return <svg style={s} viewBox="0 0 24 24" {...stroke}><path d="M4 10h12M4 14h12"/><path d="M19.5 8a7 7 0 1 0 0 8"/></svg>;
-    case 'target':
-      return <svg style={s} viewBox="0 0 24 24" {...stroke}><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>;
-    case 'wave':
-      return <svg style={s} viewBox="0 0 24 24" {...stroke}><path d="M2 12c2-4 4-4 6 0s4 4 6 0 4-4 6 0"/></svg>;
     default: return null;
   }
 }
 
-// Podatki
 const PERSONAS = [
   { id: 'student',    icon: 'student',    title: 'Student',           desc: 'Tight monthly budget, mostly food & transport' },
   { id: 'employee',  icon: 'briefcase',  title: 'Young professional', desc: 'Single income, want savings + goals' },
@@ -48,8 +43,6 @@ const CURRENCIES = [
   { code: 'GBP', symbol: '£', label: 'British Pound' },
   { code: 'CHF', symbol: 'Fr', label: 'Swiss Franc' },
 ];
-
-// Step komponente
 
 function StepWelcome() {
   return (
@@ -253,22 +246,50 @@ const Onboarding = () => {
   const [goals, setGoals] = useState([]);
   const [currency, setCurrency] = useState('EUR');
   const [monthlyBudget, setMonthlyBudget] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
   const navigate = useNavigate();
+  const { updateUser } = useAuth();
 
   const isLast = step === STEPS.length - 1;
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (isLast) {
-      // TODO: ko bo backend nared — tukaj pošljemo podatke:
-      // await onboardingService.save({ persona, goals, currency, monthlyBudget });
-      navigate('/dashboard') 
+      setSubmitting(true);
+      setError('');
+      try {
+        const result = await onboardingService.complete({ persona, goals, currency, monthlyBudget });
+        // Posodobi auth context, da je onboardingDone takoj nastavljen na true
+        updateUser(result.user);
+        navigate('/dashboard');
+      } catch (err) {
+        setError(err.message || 'Something went wrong. Please try again.');
+      } finally {
+        setSubmitting(false);
+      }
     } else {
       setStep(s => s + 1);
     }
   };
 
   const handleBack = () => setStep(s => Math.max(0, s - 1));
-  const handleSkip = () => navigate('/dashboard');
+
+  const handleSkip = async () => {
+    // Skip vseeno zaključi onboarding s poljubnimi privzetimi vrednostmi, tako da uporabnik ni preusmerjen nazaj sem ob vsaki prijavi
+    setSubmitting(true);
+    setError('');
+    try {
+      const result = await onboardingService.complete({ persona, goals, currency, monthlyBudget });
+      updateUser(result.user);
+      navigate('/dashboard');
+    } catch {
+      // Če API klic ob skip spodleti, vseeno izvedi navigacijo
+      navigate('/dashboard');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <div className="onboarding">
@@ -286,7 +307,7 @@ const Onboarding = () => {
           Step {step + 1} of {STEPS.length}
         </div>
 
-        {/* Vsebina */}
+        {/* Content */}
         {step === 0 && <StepWelcome />}
         {step === 1 && (
           <StepPersona
@@ -302,12 +323,23 @@ const Onboarding = () => {
         )}
         {step === 3 && <StepDone persona={persona} />}
 
-        {/* Navigacija */}
+        {/* Error */}
+        {error && (
+          <div style={{
+            marginTop: 16, padding: '10px 14px',
+            borderRadius: 8, background: 'var(--bad-soft)',
+            color: 'var(--bad)', fontSize: 13,
+          }}>
+            {error}
+          </div>
+        )}
+
+        {/* Navigation */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 32, paddingTop: 20, borderTop: '1px solid var(--line)' }}>
           <button
             type="button"
             onClick={handleBack}
-            disabled={step === 0}
+            disabled={step === 0 || submitting}
             style={{
               height: 36, padding: '0 14px',
               borderRadius: 8, border: '1px solid var(--line)',
@@ -316,39 +348,47 @@ const Onboarding = () => {
               opacity: step === 0 ? 0.4 : 1,
             }}
           >
-          ← Back
+            ← Back
           </button>
 
-        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-          {!isLast && (
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+            {!isLast && (
+              <button
+                type="button"
+                onClick={handleSkip}
+                disabled={submitting}
+                style={{
+                  height: 36, padding: '0 14px',
+                  borderRadius: 8, border: '1px solid var(--line)',
+                  background: 'var(--surface)', color: 'var(--text-2)',
+                  fontSize: 12.5, fontWeight: 600, cursor: 'pointer',
+                }}
+              >
+                Skip
+              </button>
+            )}
             <button
               type="button"
-              onClick={handleSkip}
+              onClick={handleNext}
+              disabled={submitting}
               style={{
                 height: 36, padding: '0 14px',
-                borderRadius: 8, border: '1px solid var(--line)',
-                background: 'var(--surface)', color: 'var(--text-2)',
+                borderRadius: 8, border: 'none',
+                background: 'var(--accent)', color: '#fff',
                 fontSize: 12.5, fontWeight: 600, cursor: 'pointer',
+                display: 'flex', alignItems: 'center', gap: 6,
+                opacity: submitting ? 0.7 : 1,
               }}
             >
-            Skip
+              {submitting
+                ? 'Saving…'
+                : isLast
+                  ? 'Go to Dashboard'
+                  : <> Continue <Ic name="arrowRight" size={14} /></>
+              }
             </button>
-          )}
-          <button
-            type="button"
-            onClick={handleNext}
-            style={{
-              height: 36, padding: '0 14px',
-              borderRadius: 8, border: 'none',
-              background: 'var(--accent)', color: '#fff',
-              fontSize: 12.5, fontWeight: 600, cursor: 'pointer',
-              display: 'flex', alignItems: 'center', gap: 6,
-            }}
-          >
-            {isLast ? 'Go to Dashboard' : <>Continue <Ic name="arrowRight" size={14} /></>}
-          </button>
+          </div>
         </div>
-      </div>
       </div>
     </div>
   );

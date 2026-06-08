@@ -4,7 +4,7 @@ const budgetSchema = new mongoose.Schema(
   {
     user: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User", //Ime user tabele
+      ref: "User",
       required: true,
     },
 
@@ -19,20 +19,14 @@ const budgetSchema = new mongoose.Schema(
       required: true,
     },
 
-     month: {
-      type: Date, 
+    month: {
+      type: Date,
       required: true,
     },
 
-    // spent: {
-    //   type: Number,
-    //   default: 0,
-    //   required: true,
-    // },
-
     prevMonthBudget: {
-     type: mongoose.Schema.Types.ObjectId,
-      default: "Budget",
+      type: mongoose.Schema.Types.ObjectId,
+      default: null,
       required: false,
     },
   },

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useAuth } from '../hooks/useAuth.js'
 import apiClient from '../services/api.js'
 
 const palette = [
@@ -18,12 +19,13 @@ function colorForCategory(category) {
   return categoryColorMap[category]
 }
 
-function fmt(amount) {
-  return new Intl.NumberFormat('de-DE', {
-    style: 'currency',
-    currency: 'EUR',
-    maximumFractionDigits: 0,
-  }).format(amount)
+function makeFmt(currency = 'EUR') {
+  return (amount) =>
+    new Intl.NumberFormat('de-DE', {
+      style: 'currency',
+      currency,
+      maximumFractionDigits: 0,
+    }).format(amount)
 }
 
 function icon(name) {
@@ -69,7 +71,7 @@ function budgetTone(percent) {
   return { label: 'On track', className: 'success', bar: '#27a96b' }
 }
 
-function BudgetCard({ budget, onDelete }) {
+function BudgetCard({ budget, onDelete, fmt }) {
   const percent = Math.round((budget.spent / budget.limit) * 100)
   const remaining = budget.limit - budget.spent
   const tone = budgetTone(percent)
@@ -124,6 +126,8 @@ function BudgetCard({ budget, onDelete }) {
 }
 
 export default function Budgets() {
+  const { user } = useAuth()
+  const fmt = makeFmt(user?.currency ?? 'EUR')
   const [report, setReport] = useState([])
   const [suggestions, setSuggestions] = useState([])
   const [loading, setLoading] = useState(true)
@@ -309,7 +313,7 @@ export default function Budgets() {
       ) : (
         <section className="budget-grid">
           {report.map((budget) => (
-            <BudgetCard key={budget.id} budget={budget} onDelete={deleteBudget} />
+            <BudgetCard key={budget.id} budget={budget} onDelete={deleteBudget} fmt={fmt} />
           ))}
         </section>
       )}
