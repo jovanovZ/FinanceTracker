@@ -12,10 +12,15 @@ post {
 
 body:json {
   {
-    "merchant": "Trgovina",
-    "amount": -20.50,
-    "date": "2026-06-08T15:00:00.000Z"
+    "merchant":"Socialna Pomoč",
+    "amount": 400.00,
+    "date": "2025-07-01T15:00:00.000Z",
+    "cat_id":"{{CATEGORY_ID}}"
   }
+}
+
+vars:pre-request {
+  CATEGORY_ID: 6a27183fb5b3f2baef966d46
 }
 
 script:post-response {

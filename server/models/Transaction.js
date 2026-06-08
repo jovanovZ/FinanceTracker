@@ -30,10 +30,8 @@ const transactionSchema = new mongoose.Schema(
         },
 
         // Kategorija naprimer "Transport"
-        cat: {
-            type: String,
-            default: '',
-        },
+        cat_id: {type: mongoose.Schema.Types.ObjectId,
+             ref:'Category'},
 
         // Iz katerega računa se je bil uvoz
         account: {
