@@ -1,11 +1,11 @@
 meta {
-  name: delete-category
+  name: get_top_5_porabnikov
   type: http
-  seq: 5
+  seq: 24
 }
 
-delete {
-  url: {{API_URL}}/category/{{CATEGORY_ID}}
+get {
+  url: {{API_URL}}/analytics/top-merchants
   body: none
   auth: inherit
 }

@@ -119,6 +119,115 @@ export const getTopMerchants = async (req, res, next) => {
     }
 };
 
+// Pridobi najvecji storsek
+// GET /analytics/biggest-expense
+export const getBiggestExpense = async (req, res, next) => {
+    try {
+        const userId = req.user._id;
+        const biggestExpense = await Transaction.findOne({
+            user: userId,
+            amount: { $lt: 0 }
+        })
+        .sort({ amount: 1 })
+        .lean();
+
+        res.status(200).json(biggestExpense);
+    } catch (error) {
+        next(error);
+    }
+};
+
+// Top 10 kategorij glede na porabo
+// GET /analytics/top-categories
+export const getTopCategories = async (req, res, next) => {
+    try {
+        const userId = req.user._id;
+        const topCategories = await Transaction.aggregate([
+            {
+                $match: {
+                    user: userId,
+                    amount: { $lt: 0 }
+                }
+            },
+            {
+                $group: {
+                    _id: "$cat_id",
+                    totalSpent: { $sum: { $abs: "$amount" } },
+                    transactionCount: { $sum: 1 }
+                }
+            },
+            { $sort: { totalSpent: -1 } },
+            { $limit: 10 },
+            {
+                $lookup: {
+                    from: "categories",
+                    localField: "_id",
+                    foreignField: "_id",
+                    as: "category"
+                }
+            },
+            { $unwind: { path: "$category", preserveNullAndEmptyArrays: true } },
+            {
+                $project: {
+                    _id: 0,
+                    categoryId: "$_id",
+                    categoryName: { $ifNull: ["$category.name", "Brez kategorije"] },
+                    totalSpent: { $round: ["$totalSpent", 2] },
+                    transactionCount: 1
+                }
+            }
+        ]);
+
+        res.status(200).json(topCategories);
+    } catch (error) {
+        next(error);
+    }
+};
+
+// Primerjava porabe med vikendom in delavnikom
+// GET /analytics/weekend-vs-weekday
+export const getWeekendVsWeekday = async (req, res, next) => {
+    try {
+        const userId = req.user._id;
+        const result = await Transaction.aggregate([
+            {
+                $match: {
+                    user: userId,
+                    amount: { $lt: 0 }
+                }
+            },
+            {
+                $group: {
+                    _id: {
+                        $in: [
+                            { $dayOfWeek: { date: "$date", timezone: "Europe/Ljubljana" } },
+                            [1, 7] // 1 = nedelja, 7 = sobota
+                        ]
+                    },
+                    totalSpent: { $sum: { $abs: "$amount" } },
+                    transactionCount: { $sum: 1 }
+                }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    period: { $cond: ["$_id", "weekend", "weekday"] },
+                    totalSpent: { $round: ["$totalSpent", 2] },
+                    transactionCount: 1,
+                    avgPerTransaction: {
+                        $round: [{ $divide: ["$totalSpent", "$transactionCount"] }, 2]
+                    }
+                }
+            },
+            { $sort: { period: 1 } }
+        ]);
+
+        res.status(200).json(result);
+    } catch (error) {
+        next(error);
+    }
+};
+
 // Poraba po dnevih v tednu
 // GET /analytics/daily-spending
 export const getDailySpending = async (req, res, next) => {

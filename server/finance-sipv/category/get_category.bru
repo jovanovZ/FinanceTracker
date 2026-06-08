@@ -1,19 +1,13 @@
 meta {
-  name: create-category
+  name: get_category
   type: http
-  seq: 1
+  seq: 8
 }
 
-post {
+get {
   url: {{API_URL}}/category
   body: json
   auth: inherit
-}
-
-body:json {
-  {
-    "name": "Groceries"
-  }
 }
 
 settings {

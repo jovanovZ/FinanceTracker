@@ -1,0 +1,16 @@
+meta {
+  name: get_najvecji_strosek
+  type: http
+  seq: 23
+}
+
+get {
+  url: {{API_URL}}/analytics/biggest-expense
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
