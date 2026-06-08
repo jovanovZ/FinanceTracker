@@ -104,8 +104,7 @@ export default function Import() {
     }
     setParsing(true)
     try {
-      const urlBase = import.meta.env.VITE_API_URL
-      if (!urlBase) throw new Error('API URL not configured')
+      const urlBase = import.meta.env.VITE_API_URL || 'http://localhost:3000'
       const url = `${urlBase.replace(/\/$/, '')}/import/csv`
 
       const fd = new FormData()
