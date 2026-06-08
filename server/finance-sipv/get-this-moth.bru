@@ -1,0 +1,11 @@
+meta {
+  name: 3_get_current_month_budgets
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{API_URL}}/budgets/current
+  body: none
+  auth: inherit
+}

@@ -1,0 +1,17 @@
+meta {
+  name: 4_update_budget
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{API_URL}}/budgets/{{BUDGET_ID}}
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "limit": 450
+  }
+}
