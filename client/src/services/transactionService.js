@@ -19,6 +19,7 @@ export const ACCOUNTS   = ['NLB Checking', 'Revolut', 'Main Account']
 
 function toUIShape(tx) {
   const category = tx.cat || 'Other'
+    console.log('cat from DB:', tx.cat)
   const meta     = CATEGORY_META[category] || CATEGORY_META['Other']
   const merchant = tx.merchant || 'Unknown'
   const date = tx.date
@@ -35,7 +36,7 @@ function toUIShape(tx) {
     category,
     account:   tx.account || 'Main Account',
     date,
-    rawDate,          // ← add this line
+    rawDate,        
     amount:    tx.amount,
     recurring: tx.isSub || false,
     catColor:  meta.color,
@@ -51,7 +52,7 @@ function toAPIShape(formData) {
     desc:     formData.sub || '',
     amount:   formData.amount,                      // already signed by modal
     date:     formData.date ? new Date(formData.date) : new Date(),
-    cat:      formData.category || 'Other',
+    cat: formData.category || 'Other',
     account:  formData.account  || 'Main Account',
     isSub:    formData.recurring || false,
     currency: formData.currency || 'EUR',

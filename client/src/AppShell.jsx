@@ -1,5 +1,5 @@
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useAuth } from './hooks/useAuth'
 import { useTheme } from './hooks/useTheme'
 import { TransactionModalProvider } from './context/TransactionsModalContext.jsx'
@@ -104,14 +104,6 @@ function Sidebar({ active, txCount, onTxCountChange }) {
         ))}
       </div>
 
-      <div className="sidebar-footer">
-        <div className="sidebar-upgrade">
-          <div className="sidebar-upgrade-title">Connect your bank</div>
-          <div className="sidebar-upgrade-desc">Auto-sync transactions daily instead of CSV uploads.</div>
-          <button type="button" className="sidebar-upgrade-btn" disabled>Learn more</button>
-        </div>
-      </div>
-
       <div className="sidebar-user">
         <div className="sidebar-user-avatar">{user?.name?.[0]?.toUpperCase() || '?'}</div>
         <div style={{ lineHeight: 1.25, flex: 1 }}>
@@ -135,15 +127,189 @@ function Sidebar({ active, txCount, onTxCountChange }) {
   )
 }
 
-function Topbar({ theme, toggleTheme }) {
+function SearchResults({ results, onClose, onSelect }) {
+  if (!results.length) return null
+
+  return (
+    <div className="search-results">
+      {results.map((result) => (
+        <button
+          key={result.id}
+          className="search-result-item"
+          onClick={() => {
+            onSelect(result)
+            onClose()
+          }}
+        >
+          <div className="search-result-icon">
+            {result.type === 'transaction' ? (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7H14a3.5 3.5 0 0 1 0 7H6" />
+              </svg>
+            ) : result.type === 'merchant' ? (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4" />
+              </svg>
+            ) : (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M8 12h8M12 8v8" />
+              </svg>
+            )}
+          </div>
+          <div className="search-result-content">
+            <div className="search-result-title">{result.title}</div>
+            <div className="search-result-subtitle">{result.subtitle}</div>
+          </div>
+          <div className="search-result-type">{result.type}</div>
+        </button>
+      ))}
+    </div>
+  )
+}
+
+function Topbar({ theme, toggleTheme, onGlobalSearch }) {
   const [period, setPeriod] = useState('Month')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState([])
+  const [showResults, setShowResults] = useState(false)
+  const [isSearching, setIsSearching] = useState(false)
+  const searchRef = useRef(null)
+  const debounceTimer = useRef(null)
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setShowResults(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const performSearch = useCallback(async (query) => {
+    if (!query.trim() || query.length < 2) {
+      setSearchResults([])
+      return
+    }
+
+    setIsSearching(true)
+    try {
+      const [transactions, merchants] = await Promise.all([
+        apiClient.get(`/transactions?keyword=${encodeURIComponent(query)}`).catch(() => []),
+        apiClient.get(`/analytics/top-merchants`).catch(() => [])
+      ])
+
+      const results = []
+
+      if (Array.isArray(transactions)) {
+        const txResults = transactions.slice(0, 5).map(tx => ({
+          id: tx._id,
+          type: 'transaction',
+          title: tx.merchant || 'Unknown',
+          subtitle: `${tx.desc || ''} • ${new Date(tx.date).toLocaleDateString()}`,
+          amount: tx.amount,
+          category: tx.cat,
+          action: () => navigate('/transactions')
+        }))
+        results.push(...txResults)
+      }
+
+      if (Array.isArray(merchants)) {
+        const matchingMerchants = merchants
+          .filter(m => m.name?.toLowerCase().includes(query.toLowerCase()))
+          .slice(0, 3)
+          .map(m => ({
+            id: `merchant-${m.name}`,
+            type: 'merchant',
+            title: m.name,
+            subtitle: `${m.totalSpent} spent • ${m.visits} visits`,
+            action: () => navigate(`/transactions?merchant=${encodeURIComponent(m.name)}`)
+          }))
+        results.push(...matchingMerchants)
+      }
+
+      setSearchResults(results)
+    } catch (error) {
+      console.error('Search failed:', error)
+      setSearchResults([])
+    } finally {
+      setIsSearching(false)
+    }
+  }, [navigate])
+
+  useEffect(() => {
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current)
+    }
+    debounceTimer.current = setTimeout(() => {
+      performSearch(searchQuery)
+    }, 300)
+    return () => {
+      if (debounceTimer.current) {
+        clearTimeout(debounceTimer.current)
+      }
+    }
+  }, [searchQuery, performSearch])
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault()
+        document.querySelector('.search-input')?.focus()
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [])
+
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value)
+    setShowResults(true)
+  }
+
+  const handleResultSelect = (result) => {
+    if (result.action) {
+      result.action()
+    }
+    setSearchQuery('')
+    setShowResults(false)
+  }
+
+  const handlePeriodChange = (newPeriod) => {
+    setPeriod(newPeriod)
+    window.dispatchEvent(new CustomEvent('periodChange', { detail: { period: newPeriod } }))
+  }
+
   return (
     <header className="topbar">
-      <div className="search">
+      <div className="search" ref={searchRef}>
         <Ic name="search" size={16} />
-        <input placeholder="Search transactions, merchants, rules…" disabled />
+        <input
+          className="search-input"
+          placeholder="Search transactions, merchants…"
+          value={searchQuery}
+          onChange={handleSearchChange}
+          onFocus={() => setShowResults(true)}
+        />
         <span className="kbd">⌘K</span>
+        
+        {showResults && (searchResults.length > 0 || isSearching) && (
+          <div className="search-results-container">
+            {isSearching ? (
+              <div className="search-loading">Searching...</div>
+            ) : (
+              <SearchResults 
+                results={searchResults} 
+                onClose={() => setShowResults(false)}
+                onSelect={handleResultSelect}
+              />
+            )}
+          </div>
+        )}
       </div>
+      
       <div className="topbar-actions">
         <div className="period-pill">
           {['Week', 'Month', 'Quarter', 'Year'].map((p) => (
@@ -151,12 +317,13 @@ function Topbar({ theme, toggleTheme }) {
               key={p}
               type="button"
               className={period === p ? 'active' : ''}
-              onClick={() => setPeriod(p)}
+              onClick={() => handlePeriodChange(p)}
             >
               {p}
             </button>
           ))}
         </div>
+        
         <button
           type="button"
           className="icon-btn"
@@ -166,8 +333,20 @@ function Topbar({ theme, toggleTheme }) {
         >
           <Ic name={theme === 'dark' ? 'sun' : 'moon'} size={16} />
         </button>
-        <button type="button" className="icon-btn" title="Coming soon"><Ic name="calendar" size={16} /></button>
-        <button type="button" className="icon-btn" title="Coming soon">
+        
+        <button 
+          type="button" 
+          className="icon-btn" 
+          title="Select date range"
+        >
+          <Ic name="calendar" size={16} />
+        </button>
+        
+        <button 
+          type="button" 
+          className="icon-btn" 
+          title="Notifications"
+        >
           <Ic name="bell" size={16} />
           <span className="dot" />
         </button>

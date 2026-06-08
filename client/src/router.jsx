@@ -14,6 +14,7 @@ import Import from './screens/Import'
 import Settings from './screens/Settings'
 import Transactions from './screens/Transactions'
 import Budgets from './screens/Budgets'
+import Analytics from './screens/Analytics'
 import Categories from './screens/Categories'
 
 // Omogoča dostop do /onboarding samo, če uporabnik še ni opravil onboardinga
@@ -43,6 +44,7 @@ export default function Router() {
             <Route path="/transactions" element={<Transactions />} />
             <Route path="/import" element={<Import />} />
             <Route path="/budgets" element={<Budgets />} />
+            <Route path="/analytics" element={<Analytics />} />
             <Route path="/categories" element={<Categories />} />
           </Route>
         </Route>

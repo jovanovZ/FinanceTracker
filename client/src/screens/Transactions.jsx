@@ -1,6 +1,5 @@
-// Transactions.jsx
-
 import { useEffect, useState, useRef, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   getTransactions,
   deleteTransaction,
@@ -11,6 +10,25 @@ import {
 } from '../services/transactionService.js'
 import { useTransactionModal } from '../context/TransactionsModalContext.jsx'
 import { AddTransactionModal } from '../components/AddTransactionModal.jsx'
+import { useAuth } from '../hooks/useAuth.js'
+
+function makeFmt(currency = 'EUR') {
+  return (n) =>
+    new Intl.NumberFormat('de-DE', { style: 'currency', currency }).format(n)
+}
+
+function makeFmtSigned(fmt) {
+  return (n) => {
+    const s = fmt(Math.abs(n))
+    if (n > 0) return `+${s}`
+    if (n < 0) return `- ${s}`
+    return s
+  }
+}
+
+function currentMonthLabel() {
+  return new Date().toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
+}
 
 const TRANSACTION_TYPES = [
   { value: '',          label: 'All types'  },
@@ -18,21 +36,6 @@ const TRANSACTION_TYPES = [
   { value: 'expense',   label: 'Expenses'   },
   { value: 'recurring', label: 'Recurring'  },
 ]
-
-function fmt(n) {
-  return new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(n)
-}
-
-function fmtSigned(n) {
-  const s = fmt(Math.abs(n))
-  if (n > 0) return `+${s}`
-  if (n < 0) return `- ${s}`
-  return s
-}
-
-function currentMonthLabel() {
-  return new Date().toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
-}
 
 function Ic({ name, size = 16 }) {
   const s   = { width: size, height: size }
@@ -183,6 +186,11 @@ function SummaryCard({ label, value, sub, color }) {
 }
 
 export default function Transactions() {
+  const { user } = useAuth()
+  const fmt = makeFmt(user?.currency ?? 'EUR')
+  const fmtSigned = makeFmtSigned(fmt)
+  const navigate = useNavigate()
+
   const [page,       setPage]       = useState(1)
   const [search,     setSearch]     = useState('')
   const [category,   setCategory]   = useState('')
@@ -196,7 +204,6 @@ export default function Transactions() {
   const [loading,    setLoading]    = useState(true)
   const [selected,   setSelected]   = useState(new Set())
   const [toast,      setToast]      = useState(null)
-  // Edit modal state — null means closed, otherwise holds the tx being edited
   const [editingTx,  setEditingTx]  = useState(null)
 
   const { openAddTransaction, refreshKey } = useTransactionModal()
@@ -267,7 +274,6 @@ export default function Transactions() {
     load()
   }
 
-  // Called by the edit modal on submit
   async function handleEditSave(formData) {
     try {
       await updateTransaction(editingTx.id, {
@@ -287,6 +293,35 @@ export default function Transactions() {
     }
   }
 
+  async function handleExport() {
+  try {
+    const now = new Date()
+    const year = now.getFullYear()
+    const month = now.getMonth() + 1
+    const token = localStorage.getItem('authToken')
+
+    const res = await fetch(
+      `${import.meta.env.VITE_API_URL}/statements/export/csv?year=${year}&month=${month}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    )
+
+    if (!res.ok) {
+      const err = await res.json()
+      throw new Error(err.message || 'Export failed')
+    }
+
+    const blob = await res.blob()
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `report-${year}-${String(month).padStart(2, '0')}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  } catch (err) {
+    showToast('Export failed: ' + err.message, 'bad')
+  }
+}
+
   const categoryOptions = [
     { value: '', label: 'All categories' },
     ...CATEGORIES.map(c => ({ value: c, label: c }))
@@ -298,7 +333,6 @@ export default function Transactions() {
 
   return (
     <div>
-      {/* Edit modal — rendered here at the top level so it's never inside overflow:hidden */}
       {editingTx && (
         <AddTransactionModal
           initialData={editingTx}
@@ -316,11 +350,11 @@ export default function Transactions() {
           </p>
         </div>
         <div style={{ height: '40px', display: 'inline-flex', gap: 20 }}>
-          <button type="button" className="btn btn-ghost btn-sm">
+          <button type="button" className="btn btn-ghost btn-sm" onClick={handleExport}>
             <Ic name="download" size={14} />
             <span style={{ marginLeft: 6 }}>Export CSV</span>
           </button>
-          <button type="button" className="btn btn-ghost btn-sm">
+          <button type="button" className="btn btn-ghost btn-sm" onClick={() => navigate('/import')}>
             <Ic name="upload" size={14} />
             <span style={{ marginLeft: 6 }}>Import</span>
           </button>
@@ -417,22 +451,6 @@ export default function Transactions() {
             ]}
             onChange={v => { setAmountSort(v); setPage(1) }}
           />
-
-          <div style={{ marginLeft: 'auto' }}>
-            <button
-              type="button"
-              style={{
-                display: 'inline-flex', alignItems: 'center', gap: 6,
-                padding: '6px 12px', fontSize: 13, fontWeight: 500,
-                border: '1px solid var(--line-2)', borderRadius: 8,
-                background: 'transparent', color: 'var(--text-2)',
-                cursor: 'pointer',
-              }}
-            >
-              <Ic name="filter" size={13} />
-              More filters
-            </button>
-          </div>
         </div>
       </div>
 
@@ -516,6 +534,7 @@ export default function Transactions() {
                 <TxRow
                   key={tx.id}
                   tx={tx}
+                  fmt={fmt}
                   selected={selected.has(tx.id)}
                   onToggle={() => toggleOne(tx.id)}
                   onDelete={handleDelete}
@@ -590,7 +609,7 @@ export default function Transactions() {
   )
 }
 
-function TxRow({ tx, selected, onToggle, onDelete, onEdit }) {
+function TxRow({ tx, fmt, selected, onToggle, onDelete, onEdit }) {
   const isIncome = tx.amount > 0
 
   return (

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useLocation } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth.js'
 import apiClient from '../services/api.js'
 
@@ -132,10 +133,12 @@ export default function Budgets() {
   const [suggestions, setSuggestions] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [deleteConfirm, setDeleteConfirm] = useState(null)
+  const location = useLocation()
 
   const [modalOpen, setModalOpen] = useState(false)
   const [dismissedSuggestions, setDismissedSuggestions] = useState(new Set())
-  const [appliedSuggestions, setAppliedSuggestions] = useState(new Set())
+  const [appliedSuggestions, setAppliedSuggestions] = useState(new Map())
 
   const [form, setForm] = useState({ name: '', limit: '', spent: '', paletteIndex: 0 })
 
@@ -171,6 +174,16 @@ export default function Budgets() {
     fetchSuggestions()
   }, [fetchReport, fetchSuggestions])
 
+  useEffect(() => {
+  const handleVisibilityChange = () => {
+    if (document.visibilityState === 'visible') {
+      fetchReport()
+    }
+  }
+  document.addEventListener('visibilitychange', handleVisibilityChange)
+  return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
+}, [fetchReport])
+
   const totalSpent = report.reduce((sum, b) => sum + b.spent, 0)
   const totalLimit = report.reduce((sum, b) => sum + b.limit, 0)
   const overallPercent = totalLimit > 0 ? Math.round((totalSpent / totalLimit) * 100) : 0
@@ -186,36 +199,62 @@ export default function Budgets() {
   const projectedDiff = totalLimit - projected
 
   async function applySuggestion(suggestion) {
-    const existing = report.find(
-      (b) => b.category === suggestion.category,
-    )
+    const existing = report.find((b) => b.category === suggestion.category)
     const suggestedLimit = Math.round(suggestion.averagePerMonth * 1.15)
     try {
       if (existing) {
         await apiClient.put(`/budgets/${existing.id}`, { limit: suggestedLimit })
+        setAppliedSuggestions((prev) => new Map([...prev, [suggestion.category, existing.limit]]))
       } else {
-        await apiClient.post('/budgets', {
+        const created = await apiClient.post('/budgets', {
           category: suggestion.category,
           limit: suggestedLimit,
           month: currentMonthParam,
         })
+        setAppliedSuggestions((prev) => new Map([...prev, [suggestion.category, null]])) // null = didn't exist before
       }
-      setAppliedSuggestions((prev) => new Set([...prev, suggestion.category]))
       fetchReport()
     } catch (err) {
       alert(`Could not apply suggestion: ${err.message}`)
     }
   }
 
-  async function deleteBudget(id) {
-    if (!window.confirm('Delete this budget?')) return
+  async function unapplySuggestion(suggestion) {
+    const categoryName = suggestion.category
+    const originalLimit = appliedSuggestions.get(categoryName)
+    const existing = report.find((b) => b.category === categoryName)
+
     try {
-      await apiClient.delete(`/budgets/${id}`)
-      setReport((prev) => prev.filter((b) => b.id !== id))
+      if (originalLimit === null) {
+        if (existing) await apiClient.delete(`/budgets/${existing.id}`)
+      } else {
+        if (existing) await apiClient.put(`/budgets/${existing.id}`, { limit: originalLimit })
+      }
+      setAppliedSuggestions((prev) => {
+        const next = new Map(prev)
+        next.delete(categoryName)
+        return next
+      })
+      fetchReport()
     } catch (err) {
-      alert(`Could not delete budget: ${err.message}`)
+      alert(`Could not unapply suggestion: ${err.message}`)
     }
   }
+
+async function deleteBudget(id) {
+  setDeleteConfirm(id)
+}
+
+async function confirmDelete() {
+  try {
+    await apiClient.delete(`/budgets/${deleteConfirm}`)
+    setReport((prev) => prev.filter((b) => b.id !== deleteConfirm))
+  } catch (err) {
+    alert(`Could not delete budget: ${err.message}`)
+  } finally {
+    setDeleteConfirm(null)
+  }
+}
 
   function openNewBudget() {
     setForm({ name: '', limit: '', spent: '', paletteIndex: 0 })
@@ -333,11 +372,13 @@ export default function Budgets() {
               <div className="page-actions" style={{ height: '44px', display: 'inline-flex', gap: 20 }}>
               <button
                 type="button"
-                className="btn btn-primary btn-sm"
-                onClick={() => applySuggestion({ ...s, category: categoryName })}
-                disabled={applied}
+                className={`btn btn-sm btn-primary`}
+                onClick={() => applied
+                  ? unapplySuggestion({ ...s, category: categoryName })
+                  : applySuggestion({ ...s, category: categoryName })
+                }
               >
-                {applied ? 'Applied' : 'Apply suggestion'}
+                {applied ? 'Undo' : 'Apply suggestion'}
               </button>
               <button type="button" className="btn btn-ghost btn-sm" onClick={() => dismissSuggestion(categoryName)}>
                 Dismiss
@@ -403,6 +444,45 @@ export default function Budgets() {
           </form>
         </div>
       )}
+      {deleteConfirm && (
+  <div className="modal-backdrop" onClick={() => setDeleteConfirm(null)}>
+    <div className="modal" style={{ maxWidth: 400 }} onClick={(e) => e.stopPropagation()}>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, textAlign: 'center', padding: '8px 0 16px' }}>
+        <div style={{
+          width: 48, height: 48, borderRadius: 14,
+          background: '#fef2f2', color: '#e34b4b',
+          display: 'grid', placeItems: 'center',
+        }}>
+          {icon('trash')}
+        </div>
+        <div>
+          <h3 style={{ margin: '0 0 6px', fontSize: 17, fontWeight: 700 }}>Delete budget?</h3>
+          <p style={{ margin: 0, fontSize: 13.5, color: '#64748b', lineHeight: 1.5 }}>
+            This budget will be permanently removed.<br />Your transactions won't be affected.
+          </p>
+        </div>
+      </div>
+      <div className="page-actions" style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
+        <button
+          type="button"
+          className="btn btn-ghost btn-sm"
+          style={{ flex: 1 }}
+          onClick={() => setDeleteConfirm(null)}
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          className="btn btn-sm"
+          style={{ flex: 1, background: '#e34b4b', color: '#fff', border: 'none' }}
+          onClick={confirmDelete}
+        >
+          Delete
+        </button>
+      </div>
+    </div>
+  </div>
+)}
     </div>
   )
 }

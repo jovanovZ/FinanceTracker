@@ -53,7 +53,7 @@ const Signup = () => {
     <div className="auth-root">
       <div className="auth-wrap">
         <AuthSide />
-        <div className="auth-form-wrap">
+        <div className="auth-form-wrap auth-form-wrap--scrollable">
           <form className="auth-form" onSubmit={handleSubmit}>
             <h1>Create account</h1>
             <p className="auth-form-sub">Start tracking your finances in minutes.</p>
@@ -85,7 +85,7 @@ const Signup = () => {
               <label htmlFor="signup-password">Password</label>
               <div className="input-affix">
                 <input id="signup-password" className="input" type={showPass ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} autoComplete="new-password" required />
-                <button className="input-affix-right" onClick={() => setShowPass(v => !v)} aria-label={showPass ? 'Hide password' : 'Show password'} type="button">
+                <button type="button" className="input-affix-right" onClick={() => setShowPass(v => !v)} aria-label={showPass ? 'Hide password' : 'Show password'}>
                   {showPass ? <EyeOffIcon /> : <EyeIcon />}
                 </button>
               </div>
@@ -95,7 +95,7 @@ const Signup = () => {
               <label htmlFor="signup-confirm">Confirm password</label>
               <div className="input-affix">
                 <input id="signup-confirm" className="input" type={showConfirmPass ? 'text' : 'password'} value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} autoComplete="new-password" required />
-                <button className="input-affix-right" onClick={() => setShowConfirmPass(v => !v)} aria-label={showConfirmPass ? 'Hide password' : 'Show password'} type="button">
+                <button type="button" className="input-affix-right" onClick={() => setShowConfirmPass(v => !v)} aria-label={showConfirmPass ? 'Hide password' : 'Show password'}>
                   {showConfirmPass ? <EyeOffIcon /> : <EyeIcon />}
                 </button>
               </div>
@@ -107,7 +107,9 @@ const Signup = () => {
 
             <p className="auth-footer">
               Already have an account?{' '}
-              <a onClick={() => navigate('/login')}>Log in</a>
+              <button type="button" className="link-btn" onClick={() => navigate('/login')}>
+                Log in
+              </button>
             </p>
           </form>
 
