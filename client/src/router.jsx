@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { useAuth } from './hooks/useAuth'
 import ProtectedRoute from './components/ProtectedRoute'
 import PublicRoute from './components/PublicRoute'
 import AppShell from './AppShell'
@@ -15,6 +16,13 @@ import Transactions from './screens/Transactions'
 import Budgets from './screens/Budgets'
 import Categories from './screens/Categories'
 
+// Omogoča dostop do /onboarding samo, če uporabnik še ni opravil onboardinga
+// Če ga je že uspešno zaključil, ga preusmeri na /dashboard
+function OnboardingRoute() {
+  const { user } = useAuth()
+  return user?.onboardingDone ? <Navigate to="/dashboard" replace /> : <Onboarding />
+}
+
 export default function Router() {
   return (
     <BrowserRouter>
@@ -27,7 +35,7 @@ export default function Router() {
         </Route>
 
         <Route element={<ProtectedRoute />}>
-          <Route path="/onboarding" element={<Onboarding />} />
+          <Route path="/onboarding" element={<OnboardingRoute />} />
           <Route element={<AppShell />}>
             <Route path="/profile" element={<Profile />} />
             <Route path="/dashboard" element={<Dashboard />} />

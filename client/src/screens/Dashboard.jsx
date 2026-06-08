@@ -1,9 +1,4 @@
 // Dashboard.jsx
-// Mockup: stat cards w/ sparklines, cash-flow chart
-
-//buttons must be connected to the correct pages - need to be done after other pages are created
-//right now are only commented out
-
 import { useEffect, useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
@@ -15,9 +10,15 @@ import {
   getInsights,
 } from '../services/dashboardService.js'
 import { useTransactionModal } from '../context/TransactionsModalContext.jsx'
+import { useAuth } from '../hooks/useAuth.js'
 
-function fmt(n) {
-  return new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(n)
+// ---------------------------------------------------------------------------
+// Currency-aware formatter — reads user.currency from auth context
+// Falls back to EUR if not set
+// ---------------------------------------------------------------------------
+function makeFmt(currency = 'EUR') {
+  return (n) =>
+    new Intl.NumberFormat('de-DE', { style: 'currency', currency }).format(n)
 }
 
 function hour() {
@@ -52,7 +53,6 @@ function Sparkline({ data = [], color = 'var(--accent)', w = 120, h = 40 }) {
   )
 }
 
-
 function Donut({ categories, total, size = 160 }) {
   const r = 58, cx = size / 2, cy = size / 2
   const circ = 2 * Math.PI * r
@@ -82,8 +82,7 @@ function Donut({ categories, total, size = 160 }) {
   )
 }
 
-
-function CashFlowChart({ data }) {
+function CashFlowChart({ data, fmt }) {
   const W = 760, H = 220, PAD = { t: 12, r: 16, b: 36, l: 56 }
   const iW = W - PAD.l - PAD.r
   const iH = H - PAD.t - PAD.b
@@ -119,7 +118,6 @@ function CashFlowChart({ data }) {
         </linearGradient>
       </defs>
 
-      {/* Y-axis grid + labels */}
       {yTicks.map((v) => (
         <g key={v}>
           <line
@@ -127,25 +125,21 @@ function CashFlowChart({ data }) {
             stroke="var(--line)" strokeWidth="1" strokeDasharray="4 4"
           />
           <text x={PAD.l - 8} y={yOf(v) + 4} textAnchor="end" fontSize="11" fill="var(--text-3)">
-            {v === 0 ? '€0' : `€${(v / 1000).toFixed(1)}k`}
+            {fmt(v)}
           </text>
         </g>
       ))}
 
-      {/* Areas */}
       <path d={areaD('income')} fill="url(#inc-fill)" />
       <path d={areaD('expenses')} fill="url(#exp-fill)" />
 
-      {/* Lines */}
       <path d={lineD('income')} fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
       <path d={lineD('expenses')} fill="none" stroke="#f97316" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="5 3" />
 
-      {/* Dots on income line */}
       {data.map((d, i) => (
         <circle key={i} cx={xOf(i)} cy={yOf(d.income)} r="4" fill="#fff" stroke="#3b82f6" strokeWidth="2" />
       ))}
 
-      {/* X-axis labels */}
       {data.map((d, i) => (
         <text key={d.month} x={xOf(i)} y={H - 6} textAnchor="middle" fontSize="12" fill="var(--text-3)">
           {d.month}
@@ -155,7 +149,7 @@ function CashFlowChart({ data }) {
   )
 }
 
-function StatCard({ label, amount, vs, vsGood, sparkData, sparkColor }) {
+function StatCard({ label, amount, vs, vsGood, sparkData, sparkColor, fmt }) {
   return (
     <div className="card" style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 6 }}>
       <div style={{ fontSize: 12, color: 'var(--text-3)', fontWeight: 500 }}>{label}</div>
@@ -183,7 +177,7 @@ function StatCard({ label, amount, vs, vsGood, sparkData, sparkColor }) {
   )
 }
 
-function BudgetBar({ name, color, spent, total }) {
+function BudgetBar({ name, color, spent, total, fmt }) {
   const pct = Math.min((spent / total) * 100, 100)
   const over = spent > total
   const barColor = over ? '#ef4444' : pct > 75 ? '#eab308' : color
@@ -209,7 +203,6 @@ function BudgetBar({ name, color, spent, total }) {
     </div>
   )
 }
-
 
 function InsightIcon({ type }) {
   const stroke = { fill: 'none', stroke: 'currentColor', strokeWidth: 1.7, strokeLinecap: 'round', strokeLinejoin: 'round' }
@@ -254,7 +247,7 @@ function InsightCard({ insight }) {
   )
 }
 
-function TxRow({ tx }) {
+function TxRow({ tx, fmt }) {
   const isIncome = tx.amount > 0
   return (
     <tr style={{ borderBottom: '1px solid var(--line-2)' }}>
@@ -293,6 +286,50 @@ function TxRow({ tx }) {
   )
 }
 
+// ---------------------------------------------------------------------------
+// Goals banner
+// ---------------------------------------------------------------------------
+const GOAL_ICONS = {
+  'Track spending':      '📊',
+  'Stick to a budget':   '🎯',
+  'Grow savings':        '💰',
+  'Pay off debt':        '📉',
+  'Plan a big purchase': '🛒',
+  'Cut subscriptions':   '✂️',
+}
+
+function GoalsBanner({ goals }) {
+  if (!goals || goals.length === 0) return null
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 12,
+      padding: '12px 16px', borderRadius: 12,
+      background: 'var(--accent-soft)',
+      border: '1px solid var(--accent)',
+      marginBottom: 16,
+      flexWrap: 'wrap',
+    }}>
+      <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--accent)', flexShrink: 0 }}>
+        Your goals:
+      </span>
+      {goals.map((g) => (
+        <span
+          key={g}
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: 5,
+            padding: '4px 12px', borderRadius: 999,
+            background: 'var(--surface)', border: '1px solid var(--line)',
+            fontSize: 12.5, fontWeight: 500, color: 'var(--text)',
+          }}
+        >
+          <span>{GOAL_ICONS[g] ?? '✦'}</span>
+          {g}
+        </span>
+      ))}
+    </div>
+  )
+}
+
 export default function Dashboard() {
   const [stats, setStats] = useState(null)
   const [sparklines, setSparklines] = useState(null)
@@ -304,6 +341,10 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
   const { openAddTransaction } = useTransactionModal()
+  const { user } = useAuth()
+
+  // Build a currency-aware formatter from the logged-in user's preference
+  const fmt = makeFmt(user?.currency ?? 'EUR')
 
   useEffect(() => {
     let cancelled = false
@@ -334,13 +375,14 @@ export default function Dashboard() {
   const totalSpent = categories.reduce((s, c) => s + c.amount, 0)
   const topCategories = categories.slice(0, 5)
   const extraCount = categories.length - 5
+  const firstName = user?.fullName?.split(' ')[0] ?? 'there'
 
   return (
     <div>
       {/* Page head */}
       <div className="page-head" style={{ marginBottom: 20 }}>
         <div>
-          <h1 className="page-title">Good {hour()}, Lara</h1>
+          <h1 className="page-title">Good {hour()}, {firstName}</h1>
           <p className="page-sub">Here's how your money is moving this month.</p>
         </div>
         <div className="page-actions" style={{ height: '44px', display: 'inline-flex', gap: 20 }}>
@@ -359,17 +401,19 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* Goals banner — only shown when user has goals */}
+      <GoalsBanner goals={user?.goals} />
+
       {/* Stat cards */}
       <div className="grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 16 }}>
-        <StatCard label={stats.income.label} amount={stats.income.amount} vs={stats.income.vs} vsGood={stats.income.vsGood} sparkData={sparklines.income} sparkColor="#3b82f6" />
-        <StatCard label={stats.expenses.label} amount={stats.expenses.amount} vs={stats.expenses.vs} vsGood={stats.expenses.vsGood} sparkData={sparklines.expenses} sparkColor="#f97316" />
-        <StatCard label={stats.saved.label} amount={stats.saved.amount} vs={stats.saved.vs} vsGood={stats.saved.vsGood} sparkData={sparklines.saved} sparkColor="#16a34a" />
-        <StatCard label={stats.forecast.label} amount={stats.forecast.amount} vs={stats.forecast.vs} vsGood={stats.forecast.vsGood} sparkData={sparklines.forecast} sparkColor="var(--text-3)" />
+        <StatCard fmt={fmt} label={stats.income.label} amount={stats.income.amount} vs={stats.income.vs} vsGood={stats.income.vsGood} sparkData={sparklines.income} sparkColor="#3b82f6" />
+        <StatCard fmt={fmt} label={stats.expenses.label} amount={stats.expenses.amount} vs={stats.expenses.vs} vsGood={stats.expenses.vsGood} sparkData={sparklines.expenses} sparkColor="#f97316" />
+        <StatCard fmt={fmt} label={stats.saved.label} amount={stats.saved.amount} vs={stats.saved.vs} vsGood={stats.saved.vsGood} sparkData={sparklines.saved} sparkColor="#16a34a" />
+        <StatCard fmt={fmt} label={stats.forecast.label} amount={stats.forecast.amount} vs={stats.forecast.vs} vsGood={stats.forecast.vsGood} sparkData={sparklines.forecast} sparkColor="var(--text-3)" />
       </div>
 
       {/* Cash flow + Spending donut */}
       <div className="grid" style={{ gridTemplateColumns: '1fr 300px', gap: 12, marginBottom: 16 }}>
-        {/* Cash flow */}
         <div className="card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
             <div>
@@ -387,10 +431,9 @@ export default function Dashboard() {
               </span>
             </div>
           </div>
-          <CashFlowChart data={cashFlow} />
+          <CashFlowChart data={cashFlow} fmt={fmt} />
         </div>
 
-        {/* Spending donut */}
         <div className="card">
           <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 4 }}>Spending by category</div>
           <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 16 }}>This month</div>
@@ -415,7 +458,7 @@ export default function Dashboard() {
               </div>
             ))}
             {extraCount > 0 && (
-              <div style={{ fontSize: 12, color: 'var(--text-3)', cursor: 'pointer' }} /*onClick={() => navigate('/categories')}*/>+ {extraCount} more categories</div>
+              <div style={{ fontSize: 12, color: 'var(--text-3)', cursor: 'pointer' }}>+ {extraCount} more categories</div>
             )}
           </div>
         </div>
@@ -423,7 +466,6 @@ export default function Dashboard() {
 
       {/* Budgets + Insights */}
       <div className="grid" style={{ gridTemplateColumns: '1fr 340px', gap: 12, marginBottom: 16 }}>
-        {/* Budgets */}
         <div className="card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
             <div>
@@ -432,14 +474,13 @@ export default function Dashboard() {
                 {budgets.filter((b) => b.spent / b.total >= 0.5).length} of {budgets.length} categories are more than halfway
               </div>
             </div>
-            <button type="button" className="btn btn-ghost btn-sm" /*onClick={() => navigate('/budgets')}*/ >View all →</button>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={() => navigate('/budgets')}>View all →</button>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginTop: 16 }}>
-            {budgets.map((b) => <BudgetBar key={b.name} {...b} />)}
+            {budgets.map((b) => <BudgetBar key={b.name} {...b} fmt={fmt} />)}
           </div>
         </div>
 
-        {/* Insights */}
         <div className="card">
           <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 4 }}>Insights &amp; alerts</div>
           <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 14 }}>3 new signals this week</div>
@@ -473,7 +514,7 @@ export default function Dashboard() {
             </tr>
           </thead>
           <tbody>
-            {transactions.map((tx) => <TxRow key={tx.id} tx={tx} />)}
+            {transactions.map((tx) => <TxRow key={tx.id} tx={tx} fmt={fmt} />)}
           </tbody>
         </table>
       </div>
