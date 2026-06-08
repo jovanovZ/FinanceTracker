@@ -1,0 +1,15 @@
+meta {
+  name: 6_get_budget_report_by_month
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{API_URL}}/budgets/report?month=2024-10
+  body: none
+  auth: inherit
+}
+
+params:query {
+  month: 2024-10
+}

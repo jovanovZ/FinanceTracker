@@ -1,0 +1,23 @@
+meta {
+  name: 1_create_budget
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{API_URL}}/budgets/
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "category": "Oblacila",
+    "limit": 300,
+    "month": "2024-10-01T00:00:00Z"
+  }
+}
+
+vars:post-response {
+  BUDGET_ID: res.body._id
+}

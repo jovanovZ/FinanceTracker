@@ -1,0 +1,11 @@
+meta {
+  name: 8_delete_budget
+  type: http
+  seq: 8
+}
+
+delete {
+  url: {{API_URL}}/budgets/{{BUDGET_ID}}
+  body: none
+  auth: inherit
+}
