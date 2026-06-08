@@ -7,7 +7,6 @@ const categorySchema = new Schema({
   id: Number,
   name: String,
   user_id: {type: mongoose.Schema.Types.ObjectId, ref:'User'},
-  transactions: [transactionSchema.transactionSchema],
   keywords: [String],
   companies: [String],
   isSub: Boolean

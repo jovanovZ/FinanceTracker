@@ -26,7 +26,7 @@ export const parseCSV = async (req, res) => {
 
   try {
     let { transactions, errors } = await parseCSVBuffer(req.file.buffer);
-    transactions = await categorize(transactions);
+    transactions = await categorize(transactions, user_id);
 
     return res.status(200).json({
       success: true,

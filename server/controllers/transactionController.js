@@ -5,7 +5,7 @@ const Transaction = TransactionData.transactionModel;
 // GET /transactions
 export const getTransactions = async (req, res, next) => {
     try {
-        const { startDate, endDate, category, type, keyword } = req.query;
+        const { startDate, endDate, category_id, type, keyword } = req.query;
         const query = { user: req.user._id };
 
         if (startDate || endDate) {
@@ -14,8 +14,8 @@ export const getTransactions = async (req, res, next) => {
             if (endDate) query.date.$lte = new Date(endDate);
         }
 
-        if (category) {
-            query.cat = category;
+        if (category_id) {
+            query.cat_id = category_id;
         }
 
         if (type === 'income') {
@@ -45,8 +45,8 @@ export const createTransaction = async (req, res, next) => {
     try {
         
         const userId = req.user._id; 
-
-        const { merchant, desc, amount, date, cat, account, isSub, currency, bankTransactionId, importBatchId } = req.body;
+        //cat je id
+        const { merchant, desc, amount, date, cat_id, account, isSub, currency, bankTransactionId, importBatchId } = req.body;
 
         const newTransaction = new Transaction({
             user: userId,
@@ -54,7 +54,7 @@ export const createTransaction = async (req, res, next) => {
             desc,
             amount,
             date,
-            cat,
+            cat_id,
             account,
             isSub,
             currency,
@@ -78,10 +78,10 @@ export const updateTransaction = async (req, res, next) => {
         
         const userId = req.user._id; 
 
-        const { cat, desc, merchant, amount, date, account, isSub, currency } = req.body;
+        const { cat_id, desc, merchant, amount, date, account, isSub, currency } = req.body;
 
         const updateFields = {};
-        if (cat      !== undefined) updateFields.cat      = cat;
+        if (cat_id   !== undefined) updateFields.category_id = cat_id;
         if (desc     !== undefined) updateFields.desc     = desc;
         if (merchant !== undefined) updateFields.merchant = merchant;
         if (amount   !== undefined) updateFields.amount   = amount;

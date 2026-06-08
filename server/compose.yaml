@@ -7,8 +7,9 @@ services:
       - 27017:27017
     networks:
       - sipv
-    #volumes: #TODO ko bo na voljo neki zacetni podatki grejo sem
-    #  - mongodb_data:/data/db
+    volumes: 
+      - ./mongo/dump:/dump:ro
+      - ./init.sh:/docker-entrypoint-initdb.d/init.sh:ro
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
