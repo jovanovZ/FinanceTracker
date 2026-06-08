@@ -50,6 +50,21 @@ const userSchema = new mongoose.Schema(
       default: 'orange',
     },
 
+    // App + notification preferences (Settings stran)
+    preferences: {
+      defaultPeriod: {
+        type: String,
+        enum: ['Weekly', 'Monthly', 'Quarterly', 'Yearly'],
+        default: 'Monthly',
+      },
+      numberFormat: { type: String, default: '1.234,56 €' },
+      budgetAlerts: { type: Boolean, default: true },
+      budgetThreshold: { type: Number, default: 80 },
+      weeklySummary: { type: Boolean, default: true },
+      importConfirm: { type: Boolean, default: true },
+      anomalyDetection: { type: Boolean, default: true },
+    },
+
     plan: {
       type: String,
       default: 'Beta · Free',

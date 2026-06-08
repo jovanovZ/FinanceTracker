@@ -165,8 +165,10 @@ export async function saveImport(record) {
 }
 
 // Vsebina za "View CSV template" gumb.
+// POMEMBNO: headerji se MORAJO ujemati s serverskim parserjem
+// (server/services/csvParser.js -> REQUIRED_HEADERS): Datum, Opis transakcije, Znesek
 export const CSV_TEMPLATE =
-  'Transaction_Date,Description,Amount_EUR,Currency\n' +
-  '2026-04-18,LIDL LJUBLJANA,-42.18,EUR\n' +
-  '2026-04-17,BOLT.EU/RIDE,-6.40,EUR\n' +
-  '2026-04-15,EMPLOYER LTD SALARY,2180.00,EUR\n'
+  'Datum,Opis transakcije,Znesek\n' +
+  '2026-04-18,LIDL LJUBLJANA,-42.18\n' +
+  '2026-04-17,BOLT.EU/RIDE,-6.40\n' +
+  '2026-04-15,EMPLOYER LTD SALARY,2180.00\n'

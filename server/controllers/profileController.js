@@ -38,6 +38,16 @@ export const updateUserProfile = async (req, res) => {
     user.weekStart = req.body.weekStart || user.weekStart;
     user.avatarColor = req.body.avatarColor || user.avatarColor;
 
+    // Settings page preferences (partial merge)
+    if (req.body.preferences && typeof req.body.preferences === "object") {
+      const current =
+        user.preferences && typeof user.preferences.toObject === "function"
+          ? user.preferences.toObject()
+          : user.preferences || {};
+      user.preferences = { ...current, ...req.body.preferences };
+      user.markModified("preferences");
+    }
+
     if (req.body.newPassword && req.body.password) {
       const isMatch = await user.matchPassword(req.body.password);
       if (!isMatch) {
@@ -55,7 +65,9 @@ export const updateUserProfile = async (req, res) => {
 
     const updatedUser = await user.save();
 
-    res.json(updatedUser);
+    const safeUser = updatedUser.toObject();
+    delete safeUser.password;
+    res.json(safeUser);
 
   } catch (error) {
     res.status(500).json({
