@@ -1,3 +1,12 @@
+auth {
+  mode: bearer
+}
+
+auth:bearer {
+  token: {{TOKEN}}
+}
+
 vars:pre-request {
   API_URL: http://localhost:3000
+  TOKEN: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhMTRiMmZlOGQxNjEzNjA5YmQwYjFmYiIsImlhdCI6MTc4MDkxNDkyNiwiZXhwIjoxNzgxNTE5NzI2fQ.5dif7Q9vrC39wbf3fpgGrT4HdcDeWRZJIt2Ejv_8iXY
 }
