@@ -1,0 +1,28 @@
+meta {
+  name: update-category
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{API_URL}}/category/{{CATEGORY_ID}}
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "name": "Supermarket Groceries",
+    "keywords": ["food", "snacks"],
+    "isSub": false
+  }
+}
+
+vars:pre-request {
+  CATEGORY_ID: 6a269b12bc0a2ba018ee4c60
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

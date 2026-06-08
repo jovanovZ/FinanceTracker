@@ -28,7 +28,7 @@ const CategoryController = {
         try {
             const category = await CategoryModel.findById(categoryId);
             if (!category) return res.status(404).send("doesnt exist");
-            return res.status(200).json(note);
+            return res.status(200).json(category);
         } catch (err) {
             console.error(err);
             return res.status(500).send("Error while getting category by id.");
