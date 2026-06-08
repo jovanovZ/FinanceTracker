@@ -5,46 +5,37 @@ const Transaction = TransactionData.transactionModel;
 // GET /transactions
 export const getTransactions = async (req, res, next) => {
     try {
-        
-        const userId = req.user._id; 
-
         const { startDate, endDate, category, type, keyword } = req.query;
+        const query = { user: req.user._id };
 
-        let query = { user: userId };
-
-        // Filter: Datum 
         if (startDate || endDate) {
             query.date = {};
             if (startDate) query.date.$gte = new Date(startDate);
             if (endDate) query.date.$lte = new Date(endDate);
         }
 
-        // Filter: Kategorija
         if (category) {
             query.cat = category;
         }
 
-        // Filter: Tip 
         if (type === 'income') {
             query.amount = { $gt: 0 };
         } else if (type === 'expense') {
             query.amount = { $lt: 0 };
         }
 
-        // Filter: Ključna beseda
         if (keyword) {
-            query.$or =[
+            query.$or = [
                 { merchant: { $regex: keyword, $options: 'i' } }, 
                 { desc: { $regex: keyword, $options: 'i' } }
             ];
         }
 
-        // Pridobivanje vseh transakcij in sortanje po starosti
         const transactions = await Transaction.find(query).sort({ date: -1 });
 
-        res.status(200).json(transactions);
+        return res.status(200).json(transactions);
     } catch (error) {
-        next(error); 
+        return next(error); 
     }
 };
 
