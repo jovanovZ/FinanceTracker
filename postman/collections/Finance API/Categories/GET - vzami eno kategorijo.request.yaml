@@ -1,0 +1,41 @@
+$kind: http-request
+name: GET - vzami eno kategorijo
+url: "{{base_url}}/category/{{category_id}}"
+method: GET
+auth:
+  type: bearer
+  credentials:
+    token: "{{auth_token}}"
+scripts:
+  - type: afterResponse
+    code: "pm.test(\"Status code je 200\", function () {\r
+
+      \    pm.response.to.have.status(200);\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Response sadrži isti '_id' kao u URL-u\", function () {\r
+
+      \    const json = pm.response.json();\r
+
+      \    const expectedId = pm.environment.get(\"category_id\");\r
+
+      \    pm.expect(json._id).to.equal(expectedId);\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Response sadrži 'name' polje\", function () {\r
+
+      \    const json = pm.response.json();\r
+
+      \    pm.expect(json).to.have.property(\"name\");\r
+
+      \    pm.expect(json.name).to.be.a(\"string\").and.not.empty;\r
+
+      });"
+    language: text/javascript
+order: 1975723291331376

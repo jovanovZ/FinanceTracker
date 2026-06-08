@@ -1,0 +1,33 @@
+meta {
+  name: GET - lista kategorija
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{API_URL}}/category
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{auth_token}}
+}
+
+assert {
+  res.status: eq 200
+}
+
+script:post-response {
+  test("Response je array", function() {
+    expect(res.body).to.be.an("array");
+  });
+
+  test("Response time ispod 1000ms", function() {
+    expect(res.responseTime).to.be.below(1000);
+  });
+
+  if (res.body.length > 0) {
+    bru.setVar("existing_category_id", res.body[0]._id);
+  }
+}

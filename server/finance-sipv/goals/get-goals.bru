@@ -1,0 +1,29 @@
+meta {
+  name: GET - sve goals
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{API_URL}}/goals
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{auth_token}}
+}
+
+assert {
+  res.status: eq 200
+}
+
+script:post-response {
+  test("Response je array", function() {
+    expect(res.body).to.be.an("array");
+  });
+
+  if (res.body.length > 0) {
+    bru.setVar("goal_id", res.body[0]._id);
+  }
+}

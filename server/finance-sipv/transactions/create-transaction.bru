@@ -1,0 +1,54 @@
+meta {
+  name: POST - kreiraj transakciju
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{API_URL}}/transaction
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{auth_token}}
+}
+
+body:json {
+  {
+    "merchant": "Lidl",
+    "desc": "Kupovina namirnica",
+    "amount": -45.50,
+    "date": "2024-06-15",
+    "cat": "Food",
+    "account": "Main Account",
+    "isSub": false,
+    "currency": "EUR"
+  }
+}
+
+assert {
+  res.status: eq 201
+  res.body._id: isDefined
+  res.body.amount: eq -45.5
+  res.body.merchant: eq Lidl
+}
+
+script:post-response {
+  test("Transakcija ima obavezna polja", function() {
+    expect(res.body).to.have.property("_id");
+    expect(res.body).to.have.property("amount");
+    expect(res.body).to.have.property("date");
+    expect(res.body).to.have.property("user");
+  });
+
+  test("Amount je sačuvan ispravno", function() {
+    expect(res.body.amount).to.equal(-45.5);
+  });
+
+  // Sačuvaj ID za PATCH i DELETE
+  if (res.body._id) {
+    bru.setVar("transaction_id", res.body._id);
+    console.log("Nova transakcija kreirana, ID:", res.body._id);
+  }
+}

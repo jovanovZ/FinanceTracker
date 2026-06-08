@@ -1,0 +1,9 @@
+name: Finance
+values:
+  - key: base_url
+    value: ''
+  - key: auth_token
+    value: ''
+  - key: last_import_count
+    value: ''
+color: 0

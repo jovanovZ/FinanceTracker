@@ -1,0 +1,37 @@
+$kind: http-request
+name: DELETE - odstrani kategorijo
+url: "{{base_url}}/category/{{category_id}}"
+method: DELETE
+auth:
+  type: bearer
+  credentials:
+    token: "{{auth_token}}"
+scripts:
+  - type: afterResponse
+    code: "pm.test(\"Status code je 200\", function () {\r
+
+      \    pm.response.to.have.status(200);\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Response sadrži confirmation poruku\", function () {\r
+
+      \    const json = pm.response.json();\r
+
+      \    pm.expect(json).to.have.property(\"message\");\r
+
+      \    pm.expect(json.message.toLowerCase()).to.include(\"deleted\");\r
+
+      });\r
+
+      \r
+
+      // Očisti varijablu jer kategorija više ne postoji\r
+
+      pm.environment.unset(\"category_id\");\r
+
+      console.log(\"Kategorija obrisana, category_id obrisan iz environmenta\");"
+    language: text/javascript
+order: 4378362869104496

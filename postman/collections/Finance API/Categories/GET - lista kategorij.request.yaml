@@ -1,0 +1,49 @@
+$kind: http-request
+name: GET - lista kategorij
+url: "{{base_url}}/category"
+method: GET
+auth:
+  type: bearer
+  credentials:
+    token: "{{auth_token}}"
+scripts:
+  - type: afterResponse
+    code: "pm.test(\"Status code je 200\", function () {\r
+
+      \    pm.response.to.have.status(200);\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Response je array\", function () {\r
+
+      \    const json = pm.response.json();\r
+
+      \    pm.expect(json).to.be.an(\"array\");\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Response time je ispod 1000ms\", function () {\r
+
+      \    pm.expect(pm.response.responseTime).to.be.below(1000);\r
+
+      });\r
+
+      \r
+
+      // Sačuvaj ID prve kategorije ako postoji (korisno za kasnije testove)\r
+
+      const json = pm.response.json();\r
+
+      if (json.length > 0) {\r
+
+      \    pm.environment.set(\"existing_category_id\", json[0]._id);\r
+
+      \    console.log(\"Sačuvan category_id: \" + json[0]._id);\r
+
+      }"
+    language: text/javascript
+order: 1779757394949

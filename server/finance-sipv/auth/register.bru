@@ -1,0 +1,33 @@
+meta {
+  name: register
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{API_URL}}/auth/register
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "name": "Test Korisnik",
+    "email": "test@example.com",
+    "password": "password123"
+  }
+}
+
+assert {
+  res.status: eq 201
+  res.body.success: eq true
+  res.body.token: isDefined
+  res.body.user: isDefined
+}
+
+script:post-response {
+  if (res.body.token) {
+    bru.setVar("auth_token", res.body.token);
+    console.log("Token sačuvan iz register:", res.body.token);
+  }
+}

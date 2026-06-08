@@ -1,0 +1,37 @@
+$kind: http-request
+name: napacen format
+url: "{{base_url}}/import/csv"
+method: POST
+body:
+  type: formdata
+  content:
+    - type: file
+      key: file
+      src:
+        - /C:/Users/Milos
+          MB/Documents/GitHub/FinanceTracker/tests/CSVParser/februar_2025.json
+      description: ""
+      disabled: false
+auth:
+  type: bearer
+  credentials:
+    token: "{{auth_token}}"
+scripts:
+  - type: afterResponse
+    code: "pm.test(\"Status code je 400 za ne-CSV fajl\", function () {\r
+
+      \    // Multer middleware odbija non-CSV fajlove\r
+
+      \    pm.response.to.have.status(400);\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Response nije 200 (fajl nije prihvaćen)\", function () {\r
+
+      \    pm.expect(pm.response.code).to.not.equal(200);\r
+
+      });"
+    language: text/javascript
+order: 4000

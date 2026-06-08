@@ -1,0 +1,35 @@
+meta {
+  name: GET - sve transakcije
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{API_URL}}/transaction
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{auth_token}}
+}
+
+assert {
+  res.status: eq 200
+}
+
+script:post-response {
+  test("Response je array", function() {
+    expect(res.body).to.be.an("array");
+  });
+
+  test("Response time ispod 1000ms", function() {
+    expect(res.responseTime).to.be.below(1000);
+  });
+
+  // Sačuvaj ID prve transakcije ako postoji
+  if (res.body.length > 0) {
+    bru.setVar("transaction_id", res.body[0]._id);
+    console.log("Sačuvan transaction_id:", res.body[0]._id);
+  }
+}

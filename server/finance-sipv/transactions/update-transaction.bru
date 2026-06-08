@@ -1,0 +1,41 @@
+meta {
+  name: PATCH - izmijeni transakciju
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{API_URL}}/transaction/{{transaction_id}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{auth_token}}
+}
+
+body:json {
+  {
+    "cat": "Transport",
+    "desc": "Izmijenjen opis"
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body._id: isDefined
+}
+
+script:post-response {
+  test("Kategorija je izmijenjena", function() {
+    expect(res.body.cat).to.equal("Transport");
+  });
+
+  test("Opis je izmijenjen", function() {
+    expect(res.body.desc).to.equal("Izmijenjen opis");
+  });
+
+  test("ID je ostao isti", function() {
+    expect(res.body._id).to.equal(bru.getVar("transaction_id"));
+  });
+}

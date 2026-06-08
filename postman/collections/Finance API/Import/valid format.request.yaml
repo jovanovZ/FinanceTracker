@@ -1,0 +1,185 @@
+$kind: http-request
+url: "{{base_url}}/import/csv"
+method: POST
+body:
+  type: formdata
+  content:
+    - type: file
+      key: file
+      src:
+        - /C:/Users/Milos
+          MB/Documents/GitHub/FinanceTracker/tests/CSVParser/februar_2025.csv
+      description: ""
+      disabled: false
+auth:
+  type: bearer
+  credentials:
+    token: "{{auth_token}}"
+scripts:
+  - type: afterResponse
+    code: "pm.test(\"Status code je 200\", function () {\r
+
+      \    pm.response.to.have.status(200);\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Response ima 'success: true'\", function () {\r
+
+      \    const json = pm.response.json();\r
+
+      \    pm.expect(json.success).to.be.true;\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Response sadrži polje 'imported'\", function () {\r
+
+      \    const json = pm.response.json();\r
+
+      \    pm.expect(json).to.have.property(\"imported\");\r
+
+      \    pm.expect(json.imported).to.be.a(\"number\");\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Broj importovanih transakcija je veći od 0\", function () {\r
+
+      \    const json = pm.response.json();\r
+
+      \    pm.expect(json.imported).to.be.above(0);\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Response sadrži polje 'transactions' kao array\", function ()
+      {\r
+
+      \    const json = pm.response.json();\r
+
+      \    pm.expect(json).to.have.property(\"transactions\");\r
+
+      \    pm.expect(json.transactions).to.be.an(\"array\");\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Response sadrži polje 'errors' kao array\", function () {\r
+
+      \    const json = pm.response.json();\r
+
+      \    pm.expect(json).to.have.property(\"errors\");\r
+
+      \    pm.expect(json.errors).to.be.an(\"array\");\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Svaka transakcija ima obavezna polja\", function () {\r
+
+      \    const json = pm.response.json();\r
+
+      \    json.transactions.forEach(function(t, i) {\r
+
+      \        pm.expect(t, `transakcija[${i}]`).to.have.property(\"date\");\r
+
+      \        pm.expect(t, `transakcija[${i}]`).to.have.property(\"amount\");\r
+
+      \        pm.expect(t, `transakcija[${i}]`).to.have.property(\"desc\");\r
+
+      \    });\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Svaka transakcija ima 'type' koji je 'income' ili 'expense'\",
+      function () {\r
+
+      \    const json = pm.response.json();\r
+
+      \    json.transactions.forEach(function(t, i) {\r
+
+      \        pm.expect([\"income\", \"expense\"], `transakcija[${i}]
+      type`).to.include(t.type);\r
+
+      \    });\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Kategorizer je dodijelio 'cat' polje svakoj transakciji\",
+      function () {\r
+
+      \    const json = pm.response.json();\r
+
+      \    json.transactions.forEach(function(t, i) {\r
+
+      \        pm.expect(t, `transakcija[${i}]`).to.have.property(\"cat\");\r
+
+      \        // cat može biti prazan string ako kategorija nije prepoznata —
+      to je OK\r
+
+      \        pm.expect(t.cat).to.be.a(\"string\");\r
+
+      \    });\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Negativan amount ima type 'expense'\", function () {\r
+
+      \    const json = pm.response.json();\r
+
+      \    json.transactions.forEach(function(t, i) {\r
+
+      \        if (t.amount < 0) {\r
+
+      \            pm.expect(t.type,
+      `transakcija[${i}]`).to.equal(\"expense\");\r
+
+      \        }\r
+
+      \    });\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Pozitivan amount ima type 'income'\", function () {\r
+
+      \    const json = pm.response.json();\r
+
+      \    json.transactions.forEach(function(t, i) {\r
+
+      \        if (t.amount > 0) {\r
+
+      \            pm.expect(t.type,
+      `transakcija[${i}]`).to.equal(\"income\");\r
+
+      \        }\r
+
+      \    });\r
+
+      });\r
+
+      \r
+
+      // Sačuvaj broj importovanih za provjeru\r
+
+      const json = pm.response.json();\r
+
+      pm.environment.set(\"last_import_count\", json.imported);\r
+
+      console.log(\"Importovano transakcija: \" + json.imported);"
+    language: text/javascript
+order: 2000

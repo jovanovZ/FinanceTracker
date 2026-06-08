@@ -1,0 +1,29 @@
+meta {
+  name: DELETE - obriši goal
+  type: http
+  seq: 4
+}
+
+delete {
+  url: {{API_URL}}/goals/{{goal_id}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{auth_token}}
+}
+
+assert {
+  res.status: eq 200
+  res.body.message: isDefined
+}
+
+script:post-response {
+  test("Confirmation poruka postoji", function() {
+    expect(res.body.message).to.be.a("string").and.not.empty;
+  });
+
+  bru.setVar("goal_id", "");
+  console.log("Goal obrisan");
+}

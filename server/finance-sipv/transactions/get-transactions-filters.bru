@@ -1,0 +1,38 @@
+meta {
+  name: GET - transakcije sa filterima
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{API_URL}}/transaction?type=expense&startDate=2024-01-01&endDate=2024-12-31&keyword=Lidl
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{auth_token}}
+}
+
+params:query {
+  type: expense
+  startDate: 2024-01-01
+  endDate: 2024-12-31
+  keyword: Lidl
+}
+
+assert {
+  res.status: eq 200
+}
+
+script:post-response {
+  test("Response je array", function() {
+    expect(res.body).to.be.an("array");
+  });
+
+  test("Sve transakcije su expense tip (negativan amount)", function() {
+    res.body.forEach(function(t, i) {
+      expect(t.amount, "transakcija[" + i + "]").to.be.below(0);
+    });
+  });
+}

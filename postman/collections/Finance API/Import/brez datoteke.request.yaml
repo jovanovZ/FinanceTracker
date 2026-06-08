@@ -1,0 +1,42 @@
+$kind: http-request
+url: "{{base_url}}/import/csv"
+method: POST
+body:
+  type: formdata
+  content: []
+auth:
+  type: bearer
+  credentials:
+    token: "{{auth_token}}"
+scripts:
+  - type: afterResponse
+    code: "pm.test(\"Status code je 400 kada nema fajla\", function () {\r
+
+      \    pm.response.to.have.status(400);\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Response ima 'success: false'\", function () {\r
+
+      \    const json = pm.response.json();\r
+
+      \    pm.expect(json.success).to.be.false;\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Response ima error poruku\", function () {\r
+
+      \    const json = pm.response.json();\r
+
+      \    pm.expect(json).to.have.property(\"message\");\r
+
+      \    pm.expect(json.message).to.be.a(\"string\").and.not.empty;\r
+
+      });"
+    language: text/javascript
+examples: .resources/brez datoteke.resources/examples
+order: 3000

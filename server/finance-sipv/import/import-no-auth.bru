@@ -1,0 +1,27 @@
+meta {
+  name: POST - import bez tokena
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{API_URL}}/import/csv
+  body: multipartForm
+  auth: none
+}
+
+body:multipart-form {
+  file: @file(C:\Users\Milos MB\Documents\GitHub\FinanceTracker\tests\CSVParser\februar_2025.csv)
+}
+
+assert {
+  res.status: eq 401
+  res.body.success: eq false
+}
+
+script:post-response {
+  test("Error poruka pominje autorizaciju", function() {
+    const msg = (res.body.message || "").toLowerCase();
+    expect(msg.includes("token") || msg.includes("authorized")).to.be.true;
+  });
+}

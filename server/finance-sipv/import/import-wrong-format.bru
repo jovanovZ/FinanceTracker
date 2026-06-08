@@ -1,0 +1,29 @@
+meta {
+  name: POST - import pogresан format
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{API_URL}}/import/csv
+  body: multipartForm
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{auth_token}}
+}
+
+body:multipart-form {
+  file: @file(C:\Users\Milos MB\Documents\GitHub\FinanceTracker\tests\CSVParser\februar_2025.json)
+}
+
+script:post-response {
+  test("Status code nije 200 (fajl nije prihvaćen)", function() {
+    expect(res.status).to.not.equal(200);
+  });
+  
+  test("Status code je 400 ili 500 za ne-CSV fajl", function() {
+    expect([400, 500]).to.include(res.status);
+  });
+}

@@ -1,0 +1,21 @@
+meta {
+  name: health check
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{API_URL}}/
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 200
+}
+
+script:post-response {
+  test("Server je dostupan", function() {
+    expect(res.status).to.equal(200);
+  });
+}

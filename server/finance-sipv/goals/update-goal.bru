@@ -1,0 +1,42 @@
+meta {
+  name: PATCH - izmijeni goal
+  type: http
+  seq: 3
+}
+
+patch {
+  url: {{API_URL}}/goals/{{goal_id}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{auth_token}}
+}
+
+body:json {
+  {
+    "currentAmount": 1000,
+    "status": "active"
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.currentAmount: eq 1000
+}
+
+script:post-response {
+  test("currentAmount je izmijenjen", function() {
+    expect(res.body.currentAmount).to.equal(1000);
+  });
+
+  test("Progress se automatski preračunava", function() {
+    // 1000/2000 = 50%
+    expect(res.body.progress).to.equal(50);
+  });
+
+  test("remainingAmount je ispravno izračunat", function() {
+    expect(res.body.remainingAmount).to.equal(1000);
+  });
+}

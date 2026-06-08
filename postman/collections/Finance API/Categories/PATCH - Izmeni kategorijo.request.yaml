@@ -1,0 +1,46 @@
+$kind: http-request
+name: PATCH - Izmeni kategorijo
+url: "{{base_url}}/category/{{category_id}}"
+method: PATCH
+body:
+  type: json
+  content: "{\r
+
+    \  \"name\": \"TestKategorija_Izmijenjena\"\r
+
+    }"
+auth:
+  type: bearer
+  credentials:
+    token: "{{auth_token}}"
+scripts:
+  - type: afterResponse
+    code: "pm.test(\"Status code je 200\", function () {\r
+
+      \    pm.response.to.have.status(200);\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Response sadrži izmijenjeno ime\", function () {\r
+
+      \    const json = pm.response.json();\r
+
+      \    pm.expect(json.name).to.equal(\"TestKategorija_Izmijenjena\");\r
+
+      });\r
+
+      \r
+
+      pm.test(\"ID je ostao isti nakon izmjene\", function () {\r
+
+      \    const json = pm.response.json();\r
+
+      \    const expectedId = pm.environment.get(\"category_id\");\r
+
+      \    pm.expect(json._id).to.equal(expectedId);\r
+
+      });"
+    language: text/javascript
+order: 4219996922812971

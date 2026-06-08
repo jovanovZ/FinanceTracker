@@ -1,0 +1,81 @@
+meta {
+  name: POST - import validan CSV
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{API_URL}}/import/csv
+  body: multipartForm
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{auth_token}}
+}
+
+body:multipart-form {
+  file: @file(C:\Users\Milos MB\Documents\GitHub\FinanceTracker\tests\CSVParser\februar_2025.csv)
+}
+
+assert {
+  res.status: eq 200
+  res.body.success: eq true
+  res.body.imported: isDefined
+  res.body.transactions: isDefined
+  res.body.errors: isDefined
+}
+
+script:post-response {
+  test("Broj importovanih je veći od 0", function() {
+    expect(res.body.imported).to.be.above(0);
+  });
+  
+  test("Transactions je array", function() {
+    expect(res.body.transactions).to.be.an("array");
+  });
+  
+  test("Errors je array", function() {
+    expect(res.body.errors).to.be.an("array");
+  });
+  
+  test("Svaka transakcija ima obavezna polja", function() {
+    res.body.transactions.forEach(function(t, i) {
+      expect(t, "transakcija[" + i + "]").to.have.property("date");
+      expect(t, "transakcija[" + i + "]").to.have.property("amount");
+      expect(t, "transakcija[" + i + "]").to.have.property("desc");
+    });
+  });
+  
+  test("Svaka transakcija ima type 'income' ili 'expense'", function() {
+    res.body.transactions.forEach(function(t, i) {
+      expect(["income", "expense"]).to.include(t.type);
+    });
+  });
+  
+  test("Negativan amount ima type 'expense'", function() {
+    res.body.transactions.forEach(function(t, i) {
+      if (t.amount < 0) {
+        expect(t.type).to.equal("expense");
+      }
+    });
+  });
+  
+  test("Pozitivan amount ima type 'income'", function() {
+    res.body.transactions.forEach(function(t, i) {
+      if (t.amount > 0) {
+        expect(t.type).to.equal("income");
+      }
+    });
+  });
+  
+  test("'cat' polje postoji na svakoj transakciji", function() {
+    res.body.transactions.forEach(function(t, i) {
+      const catJeValidan = t.cat === undefined || typeof t.cat === "string";
+      expect(catJeValidan).to.be.true;
+    });
+  });
+  
+  bru.setVar("last_import_count", res.body.imported);
+  console.log("Importovano transakcija:", res.body.imported);
+}

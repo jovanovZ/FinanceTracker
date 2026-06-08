@@ -1,0 +1,36 @@
+meta {
+  name: PATCH - izmijeni kategoriju
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{API_URL}}/category/{{category_id}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{auth_token}}
+}
+
+body:json {
+  {
+    "name": "TestKategorija_Izmijenjena"
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.name: eq TestKategorija_Izmijenjena
+}
+
+script:post-response {
+  test("Ime je izmijenjeno", function() {
+    expect(res.body.name).to.equal("TestKategorija_Izmijenjena");
+  });
+
+  test("ID je ostao isti nakon izmjene", function() {
+    expect(res.body._id).to.equal(bru.getVar("category_id"));
+  });
+}

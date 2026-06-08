@@ -1,0 +1,43 @@
+meta {
+  name: POST - kreiraj kategoriju
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{API_URL}}/category
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{auth_token}}
+}
+
+body:json {
+  {
+    "name": "TestKategorija"
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body._id: isDefined
+  res.body.name: eq TestKategorija
+}
+
+script:post-response {
+  test("Kreirana kategorija ima _id", function() {
+    expect(res.body).to.have.property("_id");
+    expect(res.body._id).to.be.a("string").and.not.empty;
+  });
+  
+  test("Ime kategorije je ispravno sačuvano", function() {
+    expect(res.body.name).to.equal("TestKategorija");
+  });
+  
+  if (res.body._id) {
+    bru.setVar("category_id", res.body._id);
+    console.log("Nova kategorija kreirana, ID:", res.body._id);
+  }
+}

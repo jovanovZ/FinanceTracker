@@ -1,0 +1,31 @@
+meta {
+  name: login
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{API_URL}}/auth/login
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "test@example.com",
+    "password": "password123"
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.success: eq true
+  res.body.token: isDefined
+}
+
+script:post-response {
+  if (res.body.token) {
+    bru.setVar("auth_token", res.body.token);
+    console.log("Token sačuvan iz login:", res.body.token);
+  }
+}

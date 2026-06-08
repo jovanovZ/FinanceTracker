@@ -1,0 +1,27 @@
+meta {
+  name: GET - jedna kategorija (BUG)
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{API_URL}}/category/{{category_id}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{auth_token}}
+}
+
+script:post-response {
+  // BUG: categoryController.js show() vraća 'note' umjesto 'category'
+  // Server pada sa 500. Test dokumentuje bug.
+  test("⚠️ BUG: GET /category/:id vraća 500 (typo u controlleru: 'note' umjesto 'category')", function() {
+    expect(res.status).to.equal(500);
+  });
+
+  test("Response nije 200 (bug potvrđen)", function() {
+    expect(res.status).to.not.equal(200);
+  });
+}

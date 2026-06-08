@@ -1,0 +1,29 @@
+meta {
+  name: DELETE - obriši kategoriju
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{API_URL}}/category/{{category_id}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{auth_token}}
+}
+
+assert {
+  res.status: eq 200
+  res.body.message: isDefined
+}
+
+script:post-response {
+  test("Confirmation poruka postoji", function() {
+    expect(res.body.message.toLowerCase()).to.include("deleted");
+  });
+
+  bru.setVar("category_id", "");
+  console.log("Kategorija obrisana");
+}

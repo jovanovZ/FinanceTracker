@@ -1,0 +1,59 @@
+$kind: http-request
+name: manjkajo obvezne vrstice
+url: "{{base_url}}/import/csv"
+method: POST
+body:
+  type: formdata
+  content:
+    - type: file
+      key: file
+      src:
+        - /C:/Users/Milos
+          MB/Documents/GitHub/FinanceTracker/tests/CSVParser/wrong.csv
+      description: ""
+      disabled: false
+auth:
+  type: bearer
+  credentials:
+    token: "{{auth_token}}"
+scripts:
+  - type: afterResponse
+    code: "pm.test(\"Status code je 422 za CSV sa pogrešnim kolonama\", function ()
+      {\r
+
+      \    pm.response.to.have.status(422);\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Response ima 'success: false'\", function () {\r
+
+      \    const json = pm.response.json();\r
+
+      \    pm.expect(json.success).to.be.false;\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Error poruka pominje kolone (Datum, Opis, Znesek)\", function ()
+      {\r
+
+      \    const json = pm.response.json();\r
+
+      \    pm.expect(json.message).to.be.a(\"string\");\r
+
+      \    // Parser javlja koje kolone nedostaju\r
+
+      \    const msg = json.message.toLowerCase();\r
+
+      \    const pominjeMissingColone = msg.includes(\"datum\") ||
+      msg.includes(\"stolpce\") || msg.includes(\"manjka\");\r
+
+      \    pm.expect(pominjeMissingColone, \"Poruka treba pomenuti nedostajuće
+      kolone\").to.be.true;\r
+
+      });"
+    language: text/javascript
+order: 5000

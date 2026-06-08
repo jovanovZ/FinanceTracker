@@ -1,0 +1,62 @@
+meta {
+  name: POST - kreiraj goal
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{API_URL}}/goals
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{auth_token}}
+}
+
+body:json {
+  {
+    "name": "Odmor na moru",
+    "targetAmount": 2000,
+    "currentAmount": 500,
+    "targetDate": "2026-08-01",
+    "currency": "EUR",
+    "status": "active"
+  }
+}
+
+assert {
+  res.status: eq 201
+  res.body._id: isDefined
+  res.body.name: eq Odmor na moru
+  res.body.targetAmount: eq 2000
+}
+
+script:post-response {
+  test("Goal ima obavezna polja", function() {
+    expect(res.body).to.have.property("_id");
+    expect(res.body).to.have.property("name");
+    expect(res.body).to.have.property("targetAmount");
+    expect(res.body).to.have.property("targetDate");
+  });
+
+  test("Statistike su izračunate (progress, remainingAmount, monthlyContribution)", function() {
+    expect(res.body).to.have.property("progress");
+    expect(res.body).to.have.property("remainingAmount");
+    expect(res.body).to.have.property("monthlyContribution");
+  });
+
+  test("Progress je između 0 i 100", function() {
+    expect(res.body.progress).to.be.at.least(0);
+    expect(res.body.progress).to.be.at.most(100);
+  });
+
+  test("remainingAmount je targetAmount - currentAmount", function() {
+    expect(res.body.remainingAmount).to.equal(1500);
+  });
+
+  if (res.body._id) {
+    bru.setVar("goal_id", res.body._id);
+    console.log("Novi goal kreiran, ID:", res.body._id);
+  }
+}

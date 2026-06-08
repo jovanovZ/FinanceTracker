@@ -1,0 +1,25 @@
+$kind: http-request
+name: GET - neznan ID
+url: "{{base_url}}/category/000000000000000000000000"
+method: GET
+auth:
+  type: bearer
+  credentials:
+    token: "{{auth_token}}"
+scripts:
+  - type: afterResponse
+    code: "pm.test(\"Status code je 404 za nepostojeći ID\", function () {\r
+
+      \    pm.response.to.have.status(404);\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Response nije prazan\", function () {\r
+
+      \    pm.expect(pm.response.text()).to.not.be.empty;\r
+
+      });"
+    language: text/javascript
+order: 4440105612690676

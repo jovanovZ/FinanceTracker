@@ -1,0 +1,36 @@
+meta {
+  name: POST - import pogresne kolone
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{API_URL}}/import/csv
+  body: multipartForm
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{auth_token}}
+}
+
+body:multipart-form {
+  file: @file(C:\Users\Milos MB\Documents\GitHub\FinanceTracker\tests\CSVParser\wrong.csv)
+}
+
+assert {
+  res.status: eq 422
+  res.body.success: eq false
+}
+
+script:post-response {
+  test("Status code je 422 za pogrešne kolone", function() {
+    expect(res.status).to.equal(422);
+  });
+  
+  test("Error poruka pominje nedostajuće kolone", function() {
+    const msg = (res.body.message || "").toLowerCase();
+    const pominjeMissing = msg.includes("datum") || msg.includes("stolpce") || msg.includes("manjka");
+    expect(pominjeMissing).to.be.true;
+  });
+}

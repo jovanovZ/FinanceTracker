@@ -1,0 +1,33 @@
+meta {
+  name: POST - prazno ime (BUG)
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{API_URL}}/category
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{auth_token}}
+}
+
+body:json {
+  {
+    "name": ""
+  }
+}
+
+script:post-response {
+  // BUG: Category model nema 'required' validaciju za 'name'
+  // Server prihvata prazno ime i vraća 200 — trebalo bi biti 400
+  test("⚠️ BUG: POST /category prihvata prazno ime, treba vraćati 400", function() {
+    expect(res.status).to.equal(200);
+  });
+
+  test("Prazna kategorija je kreirana (bug potvrđen — ne bi smjela biti)", function() {
+    expect(res.body).to.have.property("_id");
+  });
+}

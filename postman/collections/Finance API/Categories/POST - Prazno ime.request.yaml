@@ -1,0 +1,36 @@
+$kind: http-request
+name: POST - Prazno ime
+url: "{{base_url}}/category"
+method: POST
+body:
+  type: json
+  content: "{\r\n    \"name\": \"\"\r\n}"
+auth:
+  type: bearer
+  credentials:
+    token: "{{auth_token}}"
+scripts:
+  - type: afterResponse
+    code: "pm.test(\"Status code nije 200 za prazno ime\", function () {\r
+
+      \    // Idealno treba biti 400 ili 422\r
+
+      \    // Ako server vrati 200, to je bug koji treba prijaviti\r
+
+      \    pm.expect(pm.response.code).to.not.equal(200);\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Response sadrži error informaciju\", function () {\r
+
+      \    // Provjera da server ne prihvata prazne kategorije\r
+
+      \    const code = pm.response.code;\r
+
+      \    pm.expect(code).to.be.oneOf([400, 422, 500]);\r
+
+      });"
+    language: text/javascript
+order: 4493476278806703

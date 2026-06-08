@@ -1,0 +1,58 @@
+$kind: http-request
+name: POST - Kreiraj kategorijo
+url: "{{base_url}}/category"
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \  \"name\": \"TestKategorija\"\r
+
+    }"
+auth:
+  type: bearer
+  credentials:
+    token: "{{auth_token}}"
+scripts:
+  - type: afterResponse
+    code: "pm.test(\"Status code je 200\", function () {\r
+
+      \    pm.response.to.have.status(200);\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Response sadrži '_id' polje\", function () {\r
+
+      \    const json = pm.response.json();\r
+
+      \    pm.expect(json).to.have.property(\"_id\");\r
+
+      \    pm.expect(json._id).to.be.a(\"string\").and.not.empty;\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Response sadrži 'name' koji smo poslali\", function () {\r
+
+      \    const json = pm.response.json();\r
+
+      \    pm.expect(json).to.have.property(\"name\");\r
+
+      \    pm.expect(json.name).to.equal(\"TestKategorija\");\r
+
+      });\r
+
+      \r
+
+      // Sačuvaj ID kreirane kategorije — treba nam za GET, PATCH, DELETE\r
+
+      const json = pm.response.json();\r
+
+      pm.environment.set(\"category_id\", json._id);\r
+
+      console.log(\"Nova kategorija kreirana, ID: \" + json._id);"
+    language: text/javascript
+order: 1333574143937951

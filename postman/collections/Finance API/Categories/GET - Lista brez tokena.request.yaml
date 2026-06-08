@@ -1,0 +1,37 @@
+$kind: http-request
+name: GET - Lista brez tokena
+url: "{{base_url}}/category"
+method: GET
+scripts:
+  - type: afterResponse
+    code: "pm.test(\"Status code je 401 bez auth tokena\", function () {\r
+
+      \    pm.response.to.have.status(401);\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Response ima 'success: false'\", function () {\r
+
+      \    const json = pm.response.json();\r
+
+      \    pm.expect(json.success).to.be.false;\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Error poruka pominje token ili autorizaciju\", function () {\r
+
+      \    const json = pm.response.json();\r
+
+      \    const msg = json.message.toLowerCase();\r
+
+      \    const pominjeAuth = msg.includes(\"token\") || msg.includes(\"authorized\") || msg.includes(\"auth\");\r
+
+      \    pm.expect(pominjeAuth).to.be.true;\r
+
+      });"
+    language: text/javascript
+order: 4498428866803844

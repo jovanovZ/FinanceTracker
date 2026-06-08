@@ -1,0 +1,34 @@
+$kind: http-request
+name: brez tokena
+url: "{{base_url}}/import/csv"
+method: POST
+body:
+  type: formdata
+  content:
+    - type: file
+      key: file
+      src:
+        - /C:/Users/Milos MB/Documents/GitHub/FinanceTracker/tests/CSVParser/februar_2025.csv
+      description: ""
+      disabled: false
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    code: "pm.test(\"Status code je 401 bez auth tokena\", function () {\r
+
+      \    pm.response.to.have.status(401);\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Response ima poruku o nedostatku tokena\", function () {\r
+
+      \    const json = pm.response.json();\r
+
+      \    pm.expect(json).to.have.property(\"message\");\r
+
+      });"
+    language: text/javascript
+order: 1371
