@@ -3,7 +3,7 @@
 // ki je za zdaj mock z localStorage.
 
 import { useEffect, useState } from 'react'
-import { getProfile, updateProfile, changePassword, getSessions, terminateSession } from '../services/profileService.js'
+import { getProfile, updateProfile, changePassword, terminateSession } from '../services/profileService.js'
 
 const CURRENCIES = ['EUR', 'USD', 'GBP', 'CHF']
 const LANGUAGES = ['English', 'Slovenščina']
@@ -55,18 +55,19 @@ export default function Profile() {
   const [avatarPickerOpen, setAvatarPickerOpen] = useState(false)
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false)
   const [sessionsModalOpen, setSessionsModalOpen] = useState(false)
-  const [sessions, setSessions] = useState([])
+  // const [sessions, setSessions] = useState([])
 
-  useEffect(() => {
-    let cancelled = false
-    getSessions().then((s) => !cancelled && setSessions(s))
-    return () => { cancelled = true }
-  }, [])
+  // useEffect(() => {
+  //   let cancelled = false
+  //   getSessions().then((s) => !cancelled && setSessions(s))
+  //   return () => { cancelled = true }
+  // }, [])
 
   async function handleTerminate(id) {
     try {
-      const next = await terminateSession(id)
-      setSessions(next)
+      const next = await terminateSession(profile, id)
+      // setSessions(next)
+      updateProfile(next)
       showToast('Session terminated')
     } catch (err) {
       showToast(err.message || 'Could not terminate session', 'bad')
@@ -79,6 +80,7 @@ export default function Profile() {
       .then((p) => {
         if (cancelled) return
         setProfile(p)
+        // setSessions(p.sessions)
         setForm(p)
       })
       .catch(() => showToast('Could not load profile', 'bad'))
@@ -332,7 +334,7 @@ export default function Profile() {
               />
               <SecurityRow
                 title="Active sessions"
-                sub={`${sessions.length} ${sessions.length === 1 ? 'device' : 'devices'} signed in`}
+                sub={`${profile.sessions.length} ${profile.sessions.length === 1 ? 'device' : 'devices'} signed in`}
                 cta="Manage"
                 onClick={() => setSessionsModalOpen(true)}
               />
@@ -354,7 +356,7 @@ export default function Profile() {
 
       {sessionsModalOpen && (
         <SessionsModal
-          sessions={sessions}
+          sessions={profile.sessions}
           onClose={() => setSessionsModalOpen(false)}
           onTerminate={handleTerminate}
         />
