@@ -16,6 +16,15 @@ const CATEGORY_META = {
 export const CATEGORIES = Object.keys(CATEGORY_META)
 export const ACCOUNTS   = ['NLB Checking', 'Revolut', 'Main Account']
 
+export async function getCategoryNames() {
+  const data = await apiClient.get('/category')
+
+  let categories = (data ?? []).map((data, i) => (
+    data.name
+  ))
+  console.log(categories)
+  return categories
+}
 
 function toUIShape(tx) {
   const category = tx.cat || 'Other'
