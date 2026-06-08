@@ -1,6 +1,6 @@
 // import CategoryController from "../controllers/categoryController";
 
-import CategoryModel from "../models/Category";
+import CategoryModel from "../models/Category.js";
 
 async function categorize(transactions, user_id) {
     // iz parserja dobi polje naslednjih "struktur"
