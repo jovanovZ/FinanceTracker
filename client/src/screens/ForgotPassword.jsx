@@ -11,7 +11,7 @@ function validateEmail(email) {
 }
 
 export default function ForgotPassword({ nav }) {
-    const [email, setEmail] = useState('lara@example.com')
+    const [email, setEmail] = useState('')
     const [error, setError] = useState('')
     const [sent, setSent] = useState(false)
     const [theme, toggleTheme] = useTheme()

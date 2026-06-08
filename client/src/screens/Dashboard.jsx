@@ -87,10 +87,14 @@ function CashFlowChart({ data, fmt }) {
   const iW = W - PAD.l - PAD.r
   const iH = H - PAD.t - PAD.b
 
-  if (!data.length) return null
+    if (!data || data.length < 2) return (
+    <div style={{ height: 220, display: 'grid', placeItems: 'center', color: 'var(--text-3)', fontSize: 13 }}>
+      Not enough data yet
+    </div>
+  )
 
   const allVals = data.flatMap((d) => [d.income, d.expenses])
-  const maxV = Math.max(...allVals)
+  const maxV = Math.max(...allVals, 1)
   const yTicks = [0, Math.round(maxV * 0.5 / 100) * 100, Math.round(maxV / 100) * 100]
 
   const xOf = (i) => PAD.l + (i / (data.length - 1)) * iW
@@ -330,6 +334,34 @@ function GoalsBanner({ goals }) {
   )
 }
 
+async function handleExport() {
+  try {
+    const now = new Date()
+    const year = now.getFullYear()
+    const month = now.getMonth() + 1
+    const token = localStorage.getItem('authToken')
+
+    const res = await fetch(
+      `${import.meta.env.VITE_API_URL}/statements/export/csv?year=${year}&month=${month}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    )
+
+    if (!res.ok) {
+      const err = await res.json()
+      throw new Error(err.message || 'Export failed')
+    }
+
+    const blob = await res.blob()
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `report-${year}-${String(month).padStart(2, '0')}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  } catch (err) {
+    alert('Export failed: ' + err.message)
+  }
+}
 export default function Dashboard() {
   const [stats, setStats] = useState(null)
   const [sparklines, setSparklines] = useState(null)
@@ -340,7 +372,7 @@ export default function Dashboard() {
   const [insights, setInsights] = useState([])
   const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
-  const { openAddTransaction } = useTransactionModal()
+  const { openAddTransaction, refreshKey  } = useTransactionModal()
   const { user } = useAuth()
 
   // Build a currency-aware formatter from the logged-in user's preference
@@ -367,7 +399,7 @@ export default function Dashboard() {
       setLoading(false)
     })
     return () => { cancelled = true }
-  }, [])
+  }, [refreshKey])
 
   if (loading) { return <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--text-3)' }}>Loading dashboard…</div> }
   if (!stats)  { return <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--text-3)' }}>No data yet — add your first transaction to get started.</div> }
@@ -386,7 +418,7 @@ export default function Dashboard() {
           <p className="page-sub">Here's how your money is moving this month.</p>
         </div>
         <div className="page-actions" style={{ height: '44px', display: 'inline-flex', gap: 20 }}>
-          <button type="button" className="btn btn-ghost btn-sm">
+          <button type="button" className="btn btn-ghost btn-sm" onClick={handleExport}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 6 }}>
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
             </svg>

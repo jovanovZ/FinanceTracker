@@ -12,8 +12,8 @@ const Login = () => {
   const { login } = useAuth()
   const [theme, toggleTheme] = useTheme()
 
-  const [email, setEmail] = useState('lara@example.com')
-  const [password, setPassword] = useState('mypassword123')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [showPass, setShowPass] = useState(false)
   const [rememberMe, setRememberMe] = useState(true)
   const [error, setError] = useState('')
@@ -89,8 +89,10 @@ const Login = () => {
             </button>
 
             <p className="auth-footer">
-              New here?{' '}
-              <a onClick={() => navigate('/signup')}>Create an account</a>
+                New here?{' '}
+                <button type="button" className="link-btn" onClick={() => navigate('/signup')}>
+                  Create an account
+                </button>
             </p>
           </form>
 
