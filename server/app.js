@@ -13,7 +13,7 @@ import CategoryRouter from './routes/category.routes.js';
 import TransactionRouter from './routes/transaction.routes.js';
 import AuthRouter from './routes/auth.routes.js';
 import ImportRouter from './routes/import.routes.js';
-// import GoalsRouter from "./routes/goals.routes.js"; // TODO: fix getGoalById missing in goalsController
+import GoalsRouter from "./routes/goals.routes.js";
 import { connectDB } from './config/db.js';
 import BudgetRouter from "./routes/budgetRoutes.js";
 import StatementsRouter from "./routes/statements.routes.js";   
@@ -52,7 +52,7 @@ app.use('/auth', AuthRouter);
 app.use('/category', CategoryRouter);
 app.use('/transactions', TransactionRouter);
 app.use('/import', ImportRouter);
-// app.use("/goals", GoalsRouter);
+app.use("/goals", GoalsRouter);
 app.use("/budgets", BudgetRouter);
 app.use("/statements", StatementsRouter);
 app.use('/analytics', AnalyticsRouter);

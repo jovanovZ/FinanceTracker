@@ -1,4 +1,4 @@
-import GoalsModel from "../models/Goals.js";
+import Goal from "../models/Goals.js";
 
 const withStats = (goal) => {
   const goalObject = goal.toObject();

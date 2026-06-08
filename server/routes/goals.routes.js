@@ -2,7 +2,7 @@ import express from "express";
 
 import {
   getGoals,
-  //getGoalById,
+  getGoalById,
   createGoal,
   updateGoal,
   deleteGoal,
@@ -20,7 +20,7 @@ router.route("/")
   .post(createGoal);
 
 router.route("/:id")
-  //.get(getGoalById)
+  .get(getGoalById)
   .patch(updateGoal)
   .delete(deleteGoal);
   
