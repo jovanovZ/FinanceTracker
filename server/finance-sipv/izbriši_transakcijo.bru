@@ -1,0 +1,28 @@
+meta {
+  name: izbriši_transakcijo
+  type: http
+  seq: 20
+}
+
+delete {
+  url: {{API_URL}}/transactions/{{transactionId}}
+  body: none
+  auth: inherit
+}
+
+tests {
+  test("Izbris uspešen - Status 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  
+  test("Vrne potrditveno sporočilo in izbrisan ID", function() {
+    const data = res.getBody();
+    expect(data.message).to.equal("Transakcija uspešno izbrisana.");
+    expect(data).to.have.property("id"); 
+  });
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

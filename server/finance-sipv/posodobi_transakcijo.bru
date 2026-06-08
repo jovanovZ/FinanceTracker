@@ -1,0 +1,39 @@
+meta {
+  name: posodobi_transakcijo
+  type: http
+  seq: 19
+}
+
+patch {
+  url: {{API_URL}}/transactions/{{transactionId}}
+  body: json
+  auth: inherit
+}
+
+headers {
+  : 
+}
+
+body:json {
+  {
+    "merchant": "Trgovina Spar",
+    "amount": -25.00
+  }
+}
+
+tests {
+  test("Posodobitev uspešna - Status 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  
+  test("Podatki so se pravilno posodobili", function() {
+    const data = res.getBody();
+    expect(data.merchant).to.equal("Trgovina Spar");
+    expect(data.amount).to.equal(-25.00);
+  });
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

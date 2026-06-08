@@ -1,0 +1,24 @@
+meta {
+  name: pridobi_transakcije_filtriranje
+  type: http
+  seq: 19
+}
+
+get {
+  url: {{API_URL}}/transactions?keyword=Trgovina
+  body: none
+  auth: inherit
+}
+
+params:query {
+  keyword: Trgovina
+}
+
+headers {
+  : 
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

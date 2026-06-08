@@ -1,0 +1,28 @@
+meta {
+  name: pridobi_transakcije
+  type: http
+  seq: 17
+}
+
+get {
+  url: {{API_URL}}/transactions
+  body: none
+  auth: inherit
+}
+
+tests {
+  test("Uspešno pridobljeno - Status 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  
+  test("Odgovor je tabela (Array)", function() {
+    const data = res.getBody();
+    expect(data).to.be.an("array");
+    expect(data.length).to.be.at.least(1); 
+  });
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

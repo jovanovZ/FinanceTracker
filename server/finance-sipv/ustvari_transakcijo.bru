@@ -1,0 +1,45 @@
+meta {
+  name: ustvari_transakcijo
+  type: http
+  seq: 16
+}
+
+post {
+  url: {{API_URL}}/transactions
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "merchant": "Trgovina",
+    "amount": -20.50,
+    "date": "2026-06-08T15:00:00.000Z"
+  }
+}
+
+script:post-response {
+  const data = res.getBody();
+  if (res.getStatus() === 201) {
+    bru.setVar("transactionId", data._id);
+  }
+}
+
+tests {
+  test("Transakcija ustvarjena - Status 201", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+  
+  test("Podatki ustvarjene transakcije so pravilni", function() {
+    const data = res.getBody();
+    expect(data).to.have.property("_id"); 
+    expect(data.merchant).to.equal("Trgovina");
+    expect(data.amount).to.equal(-20.5);
+    expect(data.currency).to.equal("EUR");
+  });
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
