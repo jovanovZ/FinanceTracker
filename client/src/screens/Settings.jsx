@@ -1,4 +1,17 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { getProfile, updateProfile } from '../services/profileService.js'
+
+// Privzete vrednosti — uporabljene dokler se profil ne naloži in za starejše
+// uporabnike, ki še nimajo shranjenega preferences objekta.
+const DEFAULT_PREFS = {
+  defaultPeriod: 'Monthly',
+  numberFormat: '1.234,56 €',
+  budgetAlerts: true,
+  budgetThreshold: 80,
+  weeklySummary: true,
+  importConfirm: true,
+  anomalyDetection: true,
+}
 
 function Toggle({ checked, onChange }) {
   return (
@@ -65,25 +78,56 @@ function SettingsCard({ title, children }) {
 }
 
 export default function Settings() {
-  // Appearance
-  const [defaultPeriod, setDefaultPeriod] = useState('Monthly')
-  const [numberFormat, setNumberFormat] = useState('1.234,56 €')
-
-  // Notifications
-  const [budgetAlerts, setBudgetAlerts] = useState(true)
-  const [budgetThreshold, setBudgetThreshold] = useState('80')
-  const [weeklySummary, setWeeklySummary] = useState(true)
-  const [importConfirm, setImportConfirm] = useState(true)
-  const [anomalyDetection, setAnomalyDetection] = useState(true)
-
-  // Toast for feedback
+  // prefs = trenutno stanje v formi, saved = zadnje shranjeno (za dirty tracking)
+  const [prefs, setPrefs] = useState(DEFAULT_PREFS)
+  const [saved, setSaved] = useState(DEFAULT_PREFS)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
   const [toast, setToast] = useState(null)
+
+  // Naloži shranjene nastavitve iz zaledja (GET /user/profile -> user.preferences)
+  useEffect(() => {
+    let cancelled = false
+    getProfile()
+      .then((user) => {
+        if (cancelled) return
+        const merged = { ...DEFAULT_PREFS, ...(user && user.preferences ? user.preferences : {}) }
+        setPrefs(merged)
+        setSaved(merged)
+      })
+      .catch(() => showToast('Could not load settings', 'bad'))
+      .finally(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
+  }, [])
 
   function showToast(text, tone = 'good') {
     setToast({ text, tone })
     setTimeout(() => setToast(null), 3000)
   }
 
+  function setField(name, value) {
+    setPrefs((p) => ({ ...p, [name]: value }))
+  }
+
+  const dirty = JSON.stringify(prefs) !== JSON.stringify(saved)
+
+  // Shrani v zaledje (PUT /user/profile { preferences })
+  async function handleSave() {
+    setSaving(true)
+    try {
+      const updated = await updateProfile({ preferences: prefs })
+      const merged = { ...DEFAULT_PREFS, ...(updated && updated.preferences ? updated.preferences : prefs) }
+      setSaved(merged)
+      setPrefs(merged)
+      showToast('Settings saved')
+    } catch {
+      showToast('Could not save settings', 'bad')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  // Export / delete account še nimata zaledja — ostaneta kozmetična (izven obsega naloge).
   function handleExport() {
     showToast("Export requested — you'll receive an email shortly.")
   }
@@ -115,130 +159,144 @@ export default function Settings() {
         </div>
       )}
 
-      <div className="page-head">
+      <div className="page-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16 }}>
         <div>
           <h1 className="page-title">Settings</h1>
           <p className="page-sub">Customize how Financely works for you.</p>
         </div>
+        <button
+          type="button"
+          className="btn btn-primary btn-sm"
+          onClick={handleSave}
+          disabled={loading || saving || !dirty}
+          // width/height/marginBottom override the global .btn-primary leak from Auth.css
+          style={{ width: 'auto', height: 'auto', marginBottom: 0 }}
+        >
+          {saving ? 'Saving…' : dirty ? 'Save changes' : 'Saved'}
+        </button>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {loading ? (
+        <p className="page-sub">Loading…</p>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-        {/* ── Appearance ── */}
-        <SettingsCard title="Appearance">
-          <SettingsRow
-            label="Default period"
-            description="How data is grouped by default across all views."
-          >
-            <select
-              className="input"
-              value={defaultPeriod}
-              onChange={e => setDefaultPeriod(e.target.value)}
-              style={{ width: 130 }}
+          {/* ── Appearance ── */}
+          <SettingsCard title="Appearance">
+            <SettingsRow
+              label="Default period"
+              description="How data is grouped by default across all views."
             >
-              {['Weekly', 'Monthly', 'Quarterly', 'Yearly'].map(p => (
-                <option key={p}>{p}</option>
-              ))}
-            </select>
-          </SettingsRow>
+              <select
+                className="input"
+                value={prefs.defaultPeriod}
+                onChange={e => setField('defaultPeriod', e.target.value)}
+                style={{ width: 130 }}
+              >
+                {['Weekly', 'Monthly', 'Quarterly', 'Yearly'].map(p => (
+                  <option key={p}>{p}</option>
+                ))}
+              </select>
+            </SettingsRow>
 
-          <SettingsRow
-            label="Number format"
-            description="Decimals and thousand separators used throughout the app."
-            isLast
-          >
-            <select
-              className="input"
-              value={numberFormat}
-              onChange={e => setNumberFormat(e.target.value)}
-              style={{ width: 150 }}
+            <SettingsRow
+              label="Number format"
+              description="Decimals and thousand separators used throughout the app."
+              isLast
             >
-              {['1.234,56 €', '1,234.56 €', '€1,234.56', '1 234,56 €'].map(f => (
-                <option key={f}>{f}</option>
-              ))}
-            </select>
-          </SettingsRow>
-        </SettingsCard>
+              <select
+                className="input"
+                value={prefs.numberFormat}
+                onChange={e => setField('numberFormat', e.target.value)}
+                style={{ width: 150 }}
+              >
+                {['1.234,56 €', '1,234.56 €', '€1,234.56', '1 234,56 €'].map(f => (
+                  <option key={f}>{f}</option>
+                ))}
+              </select>
+            </SettingsRow>
+          </SettingsCard>
 
-        {/* ── Notifications ── */}
-        <SettingsCard title="Notifications">
-          <SettingsRow
-            label="Budget alerts"
-            description={`Notify when approaching a category limit (currently at ${budgetThreshold}%).`}
-          >
-            <select
-              className="input"
-              value={budgetThreshold}
-              onChange={e => setBudgetThreshold(e.target.value)}
-              style={{ width: 80 }}
-              disabled={!budgetAlerts}
+          {/* ── Notifications ── */}
+          <SettingsCard title="Notifications">
+            <SettingsRow
+              label="Budget alerts"
+              description={`Notify when approaching a category limit (currently at ${prefs.budgetThreshold}%).`}
             >
-              {['60', '70', '80', '90'].map(v => (
-                <option key={v}>{v}</option>
-              ))}
-            </select>
-            <Toggle checked={budgetAlerts} onChange={setBudgetAlerts} />
-          </SettingsRow>
+              <select
+                className="input"
+                value={String(prefs.budgetThreshold)}
+                onChange={e => setField('budgetThreshold', Number(e.target.value))}
+                style={{ width: 80 }}
+                disabled={!prefs.budgetAlerts}
+              >
+                {['60', '70', '80', '90'].map(v => (
+                  <option key={v}>{v}</option>
+                ))}
+              </select>
+              <Toggle checked={prefs.budgetAlerts} onChange={v => setField('budgetAlerts', v)} />
+            </SettingsRow>
 
-          <SettingsRow
-            label="Weekly summary"
-            description="A roundup of your spending every Sunday evening."
-          >
-            <Toggle checked={weeklySummary} onChange={setWeeklySummary} />
-          </SettingsRow>
-
-          <SettingsRow
-            label="New import confirmations"
-            description="Ask for confirmation after each CSV upload."
-          >
-            <Toggle checked={importConfirm} onChange={setImportConfirm} />
-          </SettingsRow>
-
-          <SettingsRow
-            label="Anomaly detection"
-            description="Flag unusually large or out-of-pattern transactions."
-            isLast
-          >
-            <Toggle checked={anomalyDetection} onChange={setAnomalyDetection} />
-          </SettingsRow>
-        </SettingsCard>
-
-        {/* ── Data & privacy ── */}
-        <SettingsCard title="Data & privacy">
-          <SettingsRow
-            label="Export all data"
-            description="Download a ZIP file with all your transactions, budgets, and settings."
-          >
-            <button
-              type="button"
-              className="btn btn-ghost btn-sm"
-              onClick={handleExport}
+            <SettingsRow
+              label="Weekly summary"
+              description="A roundup of your spending every Sunday evening."
             >
-              Request export
-            </button>
-          </SettingsRow>
+              <Toggle checked={prefs.weeklySummary} onChange={v => setField('weeklySummary', v)} />
+            </SettingsRow>
 
-          <SettingsRow
-            label="Delete account"
-            description="Permanently remove all your data. This cannot be undone."
-            isLast
-          >
-            <button
-              type="button"
-              className="btn btn-sm"
-              onClick={handleDeleteAccount}
-              style={{
-                background: 'var(--bad-soft)',
-                color: 'var(--bad)',
-                border: '1px solid transparent',
-              }}
+            <SettingsRow
+              label="New import confirmations"
+              description="Ask for confirmation after each CSV upload."
             >
-              Delete…
-            </button>
-          </SettingsRow>
-        </SettingsCard>
+              <Toggle checked={prefs.importConfirm} onChange={v => setField('importConfirm', v)} />
+            </SettingsRow>
 
-      </div>
+            <SettingsRow
+              label="Anomaly detection"
+              description="Flag unusually large or out-of-pattern transactions."
+              isLast
+            >
+              <Toggle checked={prefs.anomalyDetection} onChange={v => setField('anomalyDetection', v)} />
+            </SettingsRow>
+          </SettingsCard>
+
+          {/* ── Data & privacy ── */}
+          <SettingsCard title="Data & privacy">
+            <SettingsRow
+              label="Export all data"
+              description="Download a ZIP file with all your transactions, budgets, and settings."
+            >
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm"
+                onClick={handleExport}
+              >
+                Request export
+              </button>
+            </SettingsRow>
+
+            <SettingsRow
+              label="Delete account"
+              description="Permanently remove all your data. This cannot be undone."
+              isLast
+            >
+              <button
+                type="button"
+                className="btn btn-sm"
+                onClick={handleDeleteAccount}
+                style={{
+                  background: 'var(--bad-soft)',
+                  color: 'var(--bad)',
+                  border: '1px solid transparent',
+                }}
+              >
+                Delete…
+              </button>
+            </SettingsRow>
+          </SettingsCard>
+
+        </div>
+      )}
     </div>
   )
 }
