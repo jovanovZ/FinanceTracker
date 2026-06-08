@@ -1,13 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
-import {
-  // keep getHistory, saveImport, CSV_TEMPLATE if still used
-  getHistory,
-  saveImport,
-  CSV_TEMPLATE,
-} from '../services/importService.js'
+import { CSV_TEMPLATE } from '../services/importService.js'
 
 const PREVIEW_LIMIT = 6
-const MAX_SIZE_MB = 10
+const MAX_SIZE_MB = 5
 
 // ... keep Ic, downloadTemplate, monthLabel as before ...
 function Ic({ name, size = 16 }) {
@@ -24,6 +19,8 @@ function Ic({ name, size = 16 }) {
       return <svg style={s} viewBox="0 0 24 24" {...stroke}><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6z"/></svg>
     case 'file':
       return <svg style={s} viewBox="0 0 24 24" {...stroke}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+    case 'trash':
+      return <svg style={s} viewBox="0 0 24 24" {...stroke}><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M9 6V4h6v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
     case 'shield':
       return <svg style={s} viewBox="0 0 24 24" {...stroke}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
     default:
@@ -66,6 +63,7 @@ export default function Import() {
         if (!cancelled && data.history) {
           setHistory(data.history.map((h) => ({
             id: h._id,
+            batchId: h.importBatchId,
             fileName: h.fileName,
             rows: h.importedRecords,
             failed: h.failedRecords,
@@ -201,12 +199,6 @@ export default function Import() {
         const text = await res.text().catch(() => null)
         throw new Error(text || `Server returned ${res.status}`)
       }
-      const next = await saveImport({
-        fileName: parsed.fileName,
-        label: monthLabel(parsed.summary.dateTo),
-        rows: parsed.summary.fresh,
-      })
-      setHistory(next)
       showToast(`Uvoženih ${parsed.summary.fresh} transakcij`)
       setParsed(null)
       setHistoryKey((k) => k + 1)
@@ -214,6 +206,23 @@ export default function Import() {
       showToast('Uvoz ni uspel', 'bad')
     } finally {
       setImporting(false)
+    }
+  }
+
+  async function deleteImport(batchId) {
+    if (!window.confirm('Izbriši ta uvoz in vse transakcije iz njega?')) return
+    try {
+      const url = `${(import.meta.env.VITE_API_URL || 'http://localhost:3000').replace(/\/$/, '')}/import/${batchId}`
+      const token = localStorage.getItem('authToken')
+      const res = await fetch(url, {
+        method: 'DELETE',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      })
+      if (!res.ok) throw new Error('Delete failed')
+      showToast('Uvoz izbrisan')
+      setHistoryKey((k) => k + 1)
+    } catch {
+      showToast('Brisanje ni uspelo', 'bad')
     }
   }
 
@@ -431,6 +440,18 @@ export default function Import() {
                     <span className={`chip ${h.status === 'completed' ? 'good' : h.status === 'partial' ? 'warn' : 'good'}`}>
                       {h.status === 'completed' ? 'Done' : h.status === 'partial' ? 'Partial' : 'Done'}
                     </span>
+                    {h.batchId && (
+                      <button
+                        type="button"
+                        onClick={() => deleteImport(h.batchId)}
+                        title="Izbriši uvoz"
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-3)', padding: 4, borderRadius: 6, display: 'flex', alignItems: 'center' }}
+                        onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--bad, #e55)'; e.currentTarget.style.background = 'var(--surface)' }}
+                        onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-3)'; e.currentTarget.style.background = 'none' }}
+                      >
+                        <Ic name="trash" size={13} />
+                      </button>
+                    )}
                   </div>
                 ))
               )}

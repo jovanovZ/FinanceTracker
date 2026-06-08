@@ -11,7 +11,7 @@ export const getImportHistory = async (req, res) => {
     const records = await ImportHistory.find({ user: req.user._id })
       .sort({ createdAt: -1 })
       .limit(10)
-      .select('fileName importedRecords failedRecords status dateRange createdAt');
+      .select('fileName importedRecords failedRecords status dateRange createdAt importBatchId');
 
     return res.status(200).json({ success: true, history: records });
   } catch (err) {
@@ -35,6 +35,25 @@ export const parseCSV = async (req, res) => {
     });
   } catch (err) {
     return res.status(422).json({ success: false, message: err.message });
+  }
+};
+
+export const deleteImportBatch = async (req, res) => {
+  const { batchId } = req.params;
+  const userId = req.user._id;
+
+  try {
+    const record = await ImportHistory.findOne({ importBatchId: batchId, user: userId });
+    if (!record) {
+      return res.status(404).json({ success: false, message: 'Import batch not found' });
+    }
+
+    const { deletedCount } = await Transaction.deleteMany({ importBatchId: batchId, user: userId });
+    await ImportHistory.deleteOne({ importBatchId: batchId, user: userId });
+
+    return res.status(200).json({ success: true, deletedTransactions: deletedCount });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: err.message });
   }
 };
 
