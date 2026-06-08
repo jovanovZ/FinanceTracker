@@ -1,6 +1,8 @@
 // import CategoryController from "../controllers/categoryController";
 
-async function categorize(transactions) {
+import CategoryModel from "../models/Category";
+
+async function categorize(transactions, user_id) {
     // iz parserja dobi polje naslednjih "struktur"
     //
     // transaction:
@@ -14,15 +16,7 @@ async function categorize(transactions) {
     // in jo posodobi z naslednjo lastnostjo
     //      cat: id,
 
-    // prod
-    // const categories = CategoryController.list();
-    // test
-    const categories = [
-        {"name": "Transport", "keywords": ["Bencin", "dizel", "gorivo", "vlak", "Avtobus"], "companies": ["Petrol"]},
-        {"name": "Salary", "keywords": ["plača"], "companies": []},
-        {"name": "Groceries", "companies": ["Lidl", "Hofer", "Špar", "Mercator"], "keywords": []},
-        {"name": "Subscription", "companies": ["Spotify", "Netflix"], "keywords": [], isSub: true}
-    ];
+    const categories = CategoryModel.find({user_id: user_id});
 
     for (var transaction in transactions) {
         var categoryType = "";
