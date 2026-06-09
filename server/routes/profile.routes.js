@@ -11,9 +11,10 @@ import protect from "../middleware/authMiddleware.js";
 const router = express.Router();
 
 router
-  .route("/profile")
+  .route("/")
   .get(protect, getUserProfile)
-  .put(protect, updateUserProfile);
+  .put(protect, updateUserProfile)
+  .patch(protect, updateUserProfile);
 router.route("/pass").put(protect, updatePass);
 
 export default router;
