@@ -1,6 +1,20 @@
 import User from "../models/User.js";
 
-// GET /user/profile
+function buildProfile(user, currentToken) {
+  const obj = typeof user.toObject === "function" ? user.toObject() : { ...user };
+  delete obj.password;
+  obj.sessions = (obj.sessions || []).map((s) => ({
+    id: s._id,
+    device: s.device || "Unknown Device",
+    browser: s.browser || "Unknown Browser",
+    location: s.location || "Unknown",
+    lastActive: s.lastActive,
+    current: currentToken ? s.token === currentToken : false,
+  }));
+  return obj;
+}
+
+// GET /profile
 export const getUserProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user._id).select("-password");
@@ -11,7 +25,8 @@ export const getUserProfile = async (req, res) => {
       });
     }
 
-    res.json(user);
+    const currentToken = req.headers.authorization?.split(" ")[1];
+    res.json(buildProfile(user, currentToken));
   } catch (error) {
     res.status(500).json({
       message: "Server error",
@@ -65,9 +80,8 @@ export const updateUserProfile = async (req, res) => {
 
     const updatedUser = await user.save();
 
-    const safeUser = updatedUser.toObject();
-    delete safeUser.password;
-    res.json(safeUser);
+    const currentToken = req.headers.authorization?.split(" ")[1];
+    res.json(buildProfile(updatedUser, currentToken));
 
   } catch (error) {
     res.status(500).json({

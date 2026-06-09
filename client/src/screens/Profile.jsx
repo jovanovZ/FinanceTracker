@@ -65,9 +65,8 @@ export default function Profile() {
 
   async function handleTerminate(id) {
     try {
-      const next = await terminateSession(profile, id)
-      // setSessions(next)
-      updateProfile(next)
+      const updatedSessions = await terminateSession(id)
+      setProfile((p) => ({ ...p, sessions: updatedSessions }))
       showToast('Session terminated')
     } catch (err) {
       showToast(err.message || 'Could not terminate session', 'bad')
@@ -334,7 +333,7 @@ export default function Profile() {
               />
               <SecurityRow
                 title="Active sessions"
-                sub={`${profile.sessions.length} ${profile.sessions.length === 1 ? 'device' : 'devices'} signed in`}
+                sub={`${(profile.sessions || []).length} ${(profile.sessions || []).length === 1 ? 'device' : 'devices'} signed in`}
                 cta="Manage"
                 onClick={() => setSessionsModalOpen(true)}
               />

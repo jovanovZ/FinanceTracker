@@ -12,7 +12,7 @@ const withStats = (goal) => {
 
 export const getGoals = async (req, res) => {
   try {
-    const goals = await Goal.find({ user: req.user._id }).sort({
+    const goals = await GoalsModel.find({ user: req.user._id }).sort({
       createdAt: -1,
     });
 
@@ -24,7 +24,7 @@ export const getGoals = async (req, res) => {
 
 export const getGoalById = async (req, res) => {
   try {
-    const goal = await Goal.findOne({
+    const goal = await GoalsModel.findOne({
       _id: req.params.id,
       user: req.user._id,
     });
@@ -41,7 +41,7 @@ export const getGoalById = async (req, res) => {
 
 export const createGoal = async (req, res) => {
   try {
-    const goal = await Goal.create({
+    const goal = await GoalsModel.create({
       user: req.user._id,
       name: req.body.name,
       targetAmount: req.body.targetAmount,
@@ -59,7 +59,7 @@ export const createGoal = async (req, res) => {
 
 export const updateGoal = async (req, res) => {
   try {
-    const goal = await Goal.findOne({
+    const goal = await GoalsModel.findOne({
       _id: req.params.id,
       user: req.user._id,
     });
@@ -87,7 +87,7 @@ export const updateGoal = async (req, res) => {
 
 export const deleteGoal = async (req, res) => {
   try {
-    const goal = await Goal.findOne({
+    const goal = await GoalsModel.findOne({
       _id: req.params.id,
       user: req.user._id,
     });

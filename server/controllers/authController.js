@@ -207,3 +207,81 @@ export const completeOnboarding = async (req, res) => {
     return res.status(500).json({ success: false, message: 'Server error' })
   }
 }
+
+// POST /auth/change-password  (protected)
+export const changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ success: false, message: 'Both passwords are required' })
+    }
+    if (newPassword.length < 8) {
+      return res.status(400).json({ success: false, message: 'New password must be at least 8 characters' })
+    }
+
+    const user = await User.findById(req.user._id).select('+password')
+    const isMatch = await user.matchPassword(currentPassword)
+    if (!isMatch) {
+      return res.status(401).json({ success: false, message: 'Current password is incorrect', code: 'INVALID_CURRENT' })
+    }
+
+    user.password = newPassword
+    await user.save()
+
+    return res.status(200).json({ success: true, message: 'Password changed successfully' })
+  } catch (error) {
+    console.error('changePassword error:', error)
+    return res.status(500).json({ success: false, message: 'Server error' })
+  }
+}
+
+function serializeSessions(sessions, currentToken) {
+  return (sessions || []).map((s) => ({
+    id: s._id,
+    device: s.device || 'Unknown Device',
+    browser: s.browser || 'Unknown Browser',
+    location: s.location || 'Unknown',
+    lastActive: s.lastActive,
+    current: currentToken ? s.token === currentToken : false,
+  }))
+}
+
+// GET /auth/sessions  (protected)
+export const getSessions = async (req, res) => {
+  try {
+    const currentToken = req.headers.authorization?.split(' ')[1]
+    return res.status(200).json({
+      success: true,
+      sessions: serializeSessions(req.user.sessions, currentToken),
+    })
+  } catch (error) {
+    return res.status(500).json({ success: false, message: 'Server error' })
+  }
+}
+
+// DELETE /auth/sessions/:id  (protected)
+export const terminateSession = async (req, res) => {
+  try {
+    const currentToken = req.headers.authorization?.split(' ')[1]
+    const user = await User.findById(req.user._id)
+
+    const session = user.sessions.id(req.params.id)
+    if (!session) {
+      return res.status(404).json({ success: false, message: 'Session not found', code: 'NOT_FOUND' })
+    }
+    if (session.token === currentToken) {
+      return res.status(400).json({ success: false, message: 'Cannot terminate the current session', code: 'IS_CURRENT' })
+    }
+
+    user.sessions.pull({ _id: req.params.id })
+    await user.save()
+
+    return res.status(200).json({
+      success: true,
+      sessions: serializeSessions(user.sessions, currentToken),
+    })
+  } catch (error) {
+    console.error('terminateSession error:', error)
+    return res.status(500).json({ success: false, message: 'Server error' })
+  }
+}
