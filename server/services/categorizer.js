@@ -16,7 +16,7 @@ async function categorize(transactions, user_id) {
     // in jo posodobi z naslednjo lastnostjo
     //      cat: id,
 
-    const categories = CategoryModel.find({user_id: user_id});
+    const categories = await CategoryModel.find({ user_id: user_id });
 
     for (var transaction in transactions) {
         var categoryType = "";
