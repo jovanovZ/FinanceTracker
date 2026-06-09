@@ -115,7 +115,7 @@ export async function getBudgets() {
   const data = await apiClient.get('/budgets/report')
 
   return (data.report ?? []).map((b, i) => ({
-    name:  b.category,
+    name:  b.cat_id.name || "Other",
     color: CATEGORY_COLORS[i % CATEGORY_COLORS.length],
     spent: b.spent,
     total: b.limit,
@@ -126,16 +126,19 @@ export async function getBudgets() {
 // Returns transaction array shaped for TxRow
 export async function getRecentTransactions() {
   const txs = await apiClient.get('/transactions?limit=10')
-
   return (Array.isArray(txs) ? txs : []).slice(0, 10).map(tx => {
     const merchant = tx.merchant || tx.desc || 'Unknown'
+    console.log(tx)
+
+    if(tx.cat_id == null) tx.cat_id = {name: "Other", color: "oklch(0.55 0.18 265)"}
+
     return {
       id:       tx._id,
       initials: merchant.slice(0, 2).toUpperCase(),
       merchant: merchant,
       sub:      tx.desc || merchant,
-      category: tx.cat  || 'Other',
-      catColor: CATEGORY_COLORS[Math.abs(hashStr(tx.cat)) % CATEGORY_COLORS.length],
+      category: tx.cat_id.name  || 'Other',
+      color: tx.cat_id.color,
       account:  tx.account  || '—',
       date:     formatDate(tx.date),
       amount:   tx.amount,

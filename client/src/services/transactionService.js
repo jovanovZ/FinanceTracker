@@ -20,16 +20,22 @@ export async function getCategoryNames() {
   const data = await apiClient.get('/category')
 
   let categories = (data ?? []).map((data, i) => (
-    data.name
+    {
+      name: data.name,
+      cat_id: data._id
+    }
   ))
-  console.log(categories)
+  // console.log(categories)
   return categories
 }
 
 function toUIShape(tx) {
-  const category = tx.cat || 'Other'
-    console.log('cat from DB:', tx.cat)
-  const meta     = CATEGORY_META[category] || CATEGORY_META['Other']
+
+
+  if(tx.cat_id == null) tx.cat_id = {name: "Other", color: "oklch(0.55 0.18 265)"}
+
+  const cat_id = tx.cat_id.name || 'Other'
+  const meta     = CATEGORY_META[cat_id] || CATEGORY_META['Other']
   const merchant = tx.merchant || 'Unknown'
   const date = tx.date
     ? new Date(tx.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
@@ -42,7 +48,8 @@ function toUIShape(tx) {
     id:        tx._id,
     merchant,
     sub:       tx.desc || '',
-    category,
+    cat_id: cat_id  ||  {name: "Other", color: "oklch(0.55 0.18 265)"},
+    color: tx.cat_id.color  || "oklch(0.55 0.18 265)",
     account:   tx.account || 'Main Account',
     date,
     rawDate,        
@@ -61,8 +68,8 @@ function toAPIShape(formData) {
     desc:     formData.sub || '',
     amount:   formData.amount,                      // already signed by modal
     date:     formData.date ? new Date(formData.date) : new Date(),
-    cat: formData.category || 'Other',
-    account:  formData.account  || 'Main Account',
+    cat_id: formData.cat_id || {name: "Other", color: "oklch(0.55 0.18 265)"},
+    account:  formData.accountt  || 'Main Account',
     isSub:    formData.recurring || false,
     currency: formData.currency || 'EUR',
   }
@@ -79,11 +86,11 @@ function computeSummary(txs) {
 
 const PAGE_SIZE = 20
 
-export async function getTransactions({ page = 1, search = '', category = '', account = '', type = '', amountSort = '' } = {}) {
+export async function getTransactions({ page = 1, search = '', cat_id = '', account = '', type = '', amountSort = '' } = {}) {
   // Build query params the backend understands
   const params = new URLSearchParams()
   if (search)   params.set('keyword',  search)
-  if (category) params.set('category', category)   // backend maps this to cat filter
+  if (cat_id)params.set('cat_id', cat_id)   // backend maps this to cat filter
   if (type && type !== 'recurring') params.set('type', type)
 
   const qs   = params.toString()

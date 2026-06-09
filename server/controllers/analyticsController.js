@@ -287,12 +287,27 @@ export const getInsights = async (req, res, next) => {
                 { $match: { user: userObjectId, amount: { $lt: 0 } } },
                 {
                     $group: {
-                        _id: "$cat",
+                        _id: "$cat_id",
                         totalSpent: { $sum: { $abs: "$amount" } }
                     }
                 },
                 { $sort: { totalSpent: -1 } },
-                { $limit: 1 }
+                { $limit: 1 },
+                {
+                    $lookup: {
+                        from: "categories",
+                        localField: "_id",
+                        foreignField: "_id",
+                        as: "categoryDoc"
+                    }
+                },
+                {
+                    $project: {
+                        _id: 0,
+                        category: { $ifNull: [{ $arrayElemAt: ["$categoryDoc.name", 0] }, "Other"] },
+                        totalSpent: 1
+                    }
+                }
             ]),
 
             Transaction.aggregate([
@@ -316,7 +331,7 @@ export const getInsights = async (req, res, next) => {
             : null;
 
         const topCategory = topCategoryData[0]
-            ? { category: topCategoryData[0]._id, amount: Math.round(topCategoryData[0].totalSpent * 100) / 100 }
+            ? { category: topCategoryData[0].category, amount: Math.round(topCategoryData[0].totalSpent * 100) / 100 }
             : null;
 
         const subStats = subscriptionData[0] || { subExpenses: 0, totalExpenses: 0 };
