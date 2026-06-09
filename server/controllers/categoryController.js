@@ -4,9 +4,9 @@ const CategoryController = {
     async create(req, res) {
         console.log(req.user)
         const userId = req.user._id;
-        const { name } = req.body;
+        const { name, color } = req.body;
         console.log(userId)
-        const newCategory = new CategoryModel({ name: name, user_id: userId });
+        const newCategory = new CategoryModel({ name: name, user_id: userId, color: color });
         try {
             const result = await newCategory.save();
             return res.status(200).json(result);

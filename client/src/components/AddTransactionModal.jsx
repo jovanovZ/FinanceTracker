@@ -16,7 +16,7 @@ export function AddTransactionModal({ onClose, onSuccess, initialData = null }) 
   const [form, setForm] = useState(() => {
     if (!isEditMode) {
       return {
-        merchant: '', sub: '', category: 'Groceries',
+        merchant: '', sub: '', cat_id: '',
         account: 'NLB Checking', date: today, amount: '',
         type: 'expense', recurring: false,
       }
@@ -24,7 +24,7 @@ export function AddTransactionModal({ onClose, onSuccess, initialData = null }) 
     return {
       merchant:  initialData.merchant  || '',
       sub:       initialData.sub       || '',
-      category:  initialData.category  || 'Groceries',
+      cat_id:  initialData.cat_id  || 'Groceries',
       account:   initialData.account   || 'NLB Checking',
       date:      parseInitialDate(initialData.rawDate || initialData.date),
       amount:    String(Math.abs(initialData.amount || 0)),
@@ -64,6 +64,7 @@ export function AddTransactionModal({ onClose, onSuccess, initialData = null }) 
     try {
       const rawAmount = parseFloat(form.amount)
       const amount = form.type === 'expense' ? -Math.abs(rawAmount) : Math.abs(rawAmount)
+      console.log(form)
       await onSuccess({ ...form, amount })
     } finally {
       setSaving(false)
@@ -137,8 +138,8 @@ export function AddTransactionModal({ onClose, onSuccess, initialData = null }) 
 
           <label className="field">
             <span className="field-label">Category</span>
-            <select className="input" value={form.category} onChange={e => setField('category', e.target.value)}>
-              {category.map(c => <option key={c} value={c}>{c}</option>)}
+            <select className="input" value={form.cat_id} onChange={e => setField('cat_id', e.target.value)}>
+              {category.map(c => <option key={c.name} value={c.cat_id}>{c.name}</option>)}
             </select>
           </label>
 

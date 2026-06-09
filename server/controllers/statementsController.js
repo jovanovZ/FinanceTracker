@@ -60,16 +60,24 @@ export const getMonthlyReport = async (req, res, next) => {
         { $match: { ...matchStage, amount: { $lt: 0 } } },
         {
           $group: {
-            _id: "$cat",
+            _id: "$cat_id",
             total: { $sum: { $abs: "$amount" } },
             count: { $sum: 1 },
+          },
+        },
+        {
+          $lookup: {
+            from: "categories",
+            localField: "_id",
+            foreignField: "_id",
+            as: "categoryDoc",
           },
         },
         { $sort: { total: -1 } },
         {
           $project: {
             _id: 0,
-            category: "$_id",
+            category: { $ifNull: [{ $arrayElemAt: ["$categoryDoc.name", 0] }, "Other"] },
             total: { $round: ["$total", 2] },
             count: 1,
           },
@@ -182,16 +190,24 @@ export const getAnnualReport = async (req, res, next) => {
         { $match: { ...matchStage, amount: { $lt: 0 } } },
         {
           $group: {
-            _id: "$cat",
+            _id: "$cat_id",
             total: { $sum: { $abs: "$amount" } },
             count: { $sum: 1 },
+          },
+        },
+        {
+          $lookup: {
+            from: "categories",
+            localField: "_id",
+            foreignField: "_id",
+            as: "categoryDoc",
           },
         },
         { $sort: { total: -1 } },
         {
           $project: {
             _id: 0,
-            category: "$_id",
+            category: { $ifNull: [{ $arrayElemAt: ["$categoryDoc.name", 0] }, "Other"] },
             total: { $round: ["$total", 2] },
             count: 1,
           },
