@@ -7,6 +7,7 @@ import {
   updateTransaction,
   CATEGORIES,
   ACCOUNTS,
+  getCategoryNames
 } from '../services/transactionService.js'
 import { useTransactionModal } from '../context/TransactionsModalContext.jsx'
 import { AddTransactionModal } from '../components/AddTransactionModal.jsx'
@@ -193,7 +194,7 @@ export default function Transactions() {
 
   const [page,       setPage]       = useState(1)
   const [search,     setSearch]     = useState('')
-  const [category,   setCategory]   = useState('')
+  const [cat_id,   setCatId]   = useState('')
   const [account,    setAccount]    = useState('')
   const [type,       setType]       = useState('')
   const [amountSort, setAmountSort] = useState('')
@@ -209,6 +210,14 @@ export default function Transactions() {
   const { openAddTransaction, refreshKey } = useTransactionModal()
   const searchTimer = useRef(null)
 
+  const [categories, setCategories] = useState([])
+
+  useEffect(() => {
+    getCategoryNames().then(data=>{setCategories(data);
+      // console.log("data", data)
+    })
+  }, []);
+
   function showToast(text, tone = 'good') {
     setToast({ text, tone })
     setTimeout(() => setToast(null), 2500)
@@ -217,7 +226,7 @@ export default function Transactions() {
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await getTransactions({ page, search, category, account, type, amountSort, refreshKey })
+      const res = await getTransactions({ page, search, cat_id, account, type, amountSort, refreshKey })
       setItems(res.items)
       setTotal(res.total)
       setPages(res.pages)
@@ -226,7 +235,7 @@ export default function Transactions() {
     } finally {
       setLoading(false)
     }
-  }, [page, search, category, account, type, amountSort, refreshKey])
+  }, [page, search, cat_id, account, type, amountSort, refreshKey])
 
   useEffect(() => { load() }, [load])
 
@@ -239,7 +248,7 @@ export default function Transactions() {
   }
 
   function handleFilter(key, val) {
-    if (key === 'category') setCategory(val)
+    if (key === 'cat_id') setCatId(val)
     if (key === 'account')  setAccount(val)
     if (key === 'type')     setType(val)
     setPage(1)
@@ -277,7 +286,7 @@ export default function Transactions() {
   async function handleEditSave(formData) {
     try {
       await updateTransaction(editingTx.id, {
-        category:  formData.category,
+        cat_id:  formData.cat_id,
         desc:      formData.sub,
         merchant:  formData.merchant,
         amount:    formData.amount,
@@ -322,9 +331,10 @@ export default function Transactions() {
   }
 }
 
+
   const categoryOptions = [
     { value: '', label: 'All categories' },
-    ...CATEGORIES.map(c => ({ value: c, label: c }))
+    ...categories.map(c => ({ value: c.cat_id, label: c.name }))
   ]
   const accountOptions = [
     { value: '', label: 'All accounts' },
@@ -425,9 +435,9 @@ export default function Transactions() {
 
           <FilterPill
             label="All categories"
-            value={category}
+            value={cat_id}
             options={categoryOptions}
-            onChange={v => handleFilter('category', v)}
+            onChange={v => handleFilter('cat_id', v)}
           />
           <FilterPill
             label="All accounts"
@@ -651,8 +661,8 @@ function TxRow({ tx, fmt, selected, onToggle, onDelete, onEdit }) {
           background: 'var(--surface-2)', border: '1px solid var(--line-2)',
           whiteSpace: 'nowrap',
         }}>
-          <span style={{ width: 6, height: 6, borderRadius: '50%', background: tx.catColor, display: 'block', flexShrink: 0 }} />
-          {tx.category}
+          <span style={{ width: 6, height: 6, borderRadius: '50%', background: tx.color, display: 'block', flexShrink: 0 }} />
+          {tx.cat_id}
         </span>
       </td>
 

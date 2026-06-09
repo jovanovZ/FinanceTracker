@@ -5,7 +5,7 @@ const Transaction = TransactionData.transactionModel;
 // GET /transactions
 export const getTransactions = async (req, res, next) => {
     try {
-        const { startDate, endDate, category_id, type, keyword } = req.query;
+        const { startDate, endDate, cat_id, type, keyword } = req.query;
         const query = { user: req.user._id };
 
         if (startDate || endDate) {
@@ -14,8 +14,8 @@ export const getTransactions = async (req, res, next) => {
             if (endDate) query.date.$lte = new Date(endDate);
         }
 
-        if (category_id) {
-            query.cat_id = category_id;
+        if (cat_id) {
+            query.cat_id = cat_id;
         }
 
         if (type === 'income') {
@@ -31,8 +31,7 @@ export const getTransactions = async (req, res, next) => {
             ];
         }
 
-        const transactions = await Transaction.find(query).sort({ date: -1 });
-
+        const transactions = await Transaction.find(query).populate('cat_id').sort({ date: -1 });
         return res.status(200).json(transactions);
     } catch (error) {
         return next(error); 
@@ -43,7 +42,7 @@ export const getTransactions = async (req, res, next) => {
 // POST /transactions
 export const createTransaction = async (req, res, next) => {
     try {
-        
+        console.log(req.body)
         const userId = req.user._id; 
         //cat je id
         const { merchant, desc, amount, date, cat_id, account, isSub, currency, bankTransactionId, importBatchId } = req.body;

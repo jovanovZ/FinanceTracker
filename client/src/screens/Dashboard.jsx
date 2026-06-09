@@ -277,7 +277,7 @@ function TxRow({ tx, fmt }) {
           fontSize: 12, padding: '3px 10px', borderRadius: 20,
           background: 'var(--surface-2)', border: '1px solid var(--line-2)',
         }}>
-          <span style={{ width: 6, height: 6, borderRadius: '50%', background: tx.catColor, display: 'block' }} />
+          <span style={{ width: 6, height: 6, borderRadius: '50%', background: tx.color, display: 'block' }} />
           {tx.category}
         </span>
       </td>
